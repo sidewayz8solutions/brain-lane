@@ -15,6 +15,7 @@ export default function Home() {
     const createProject = useProjectStore((state) => state.createProject);
 
     const handleUpload = async (data) => {
+        console.log('handleUpload called with:', data);
         setIsUploading(true);
         setUploadError(null);
 
@@ -25,19 +26,28 @@ export default function Home() {
             let detectedStack = [];
 
             if (data.type === 'zip' && data.file) {
+                console.log('Processing ZIP file:', data.file.name);
+                
                 // Upload and extract zip file
                 const uploadResult = await UploadFile({ file: data.file });
+                console.log('Upload result:', uploadResult);
                 fileUrl = uploadResult.file_url;
 
                 // Extract and analyze contents
                 const extracted = await ExtractZipContents(data.file);
+                console.log('Extracted contents:', { 
+                    fileTreeLength: extracted.fileTree?.length,
+                    fileContentsKeys: Object.keys(extracted.fileContents || {}).length 
+                });
                 fileTree = extracted.fileTree || [];
                 fileContents = extracted.fileContents || {};
 
                 const analysis = AnalyzeProjectStructure(fileTree, fileContents);
+                console.log('Analysis result:', analysis);
                 detectedStack = analysis.detected_stack || [];
             } else if (data.type === 'github' && data.url) {
                 // GitHub URL import - create project with URL for later processing
+                console.log('Processing GitHub URL:', data.url);
                 fileTree = [];
                 fileContents = {};
                 detectedStack = [];
@@ -54,8 +64,12 @@ export default function Home() {
                 detected_stack: detectedStack
             });
 
+            console.log('Created project:', project);
+            
             // Navigate to analysis page
-            navigate(createPageUrl('ProjectAnalysis') + `?id=${project.id}`);
+            const targetUrl = createPageUrl('ProjectAnalysis') + `?id=${project.id}`;
+            console.log('Navigating to:', targetUrl);
+            navigate(targetUrl);
 
         } catch (error) {
             console.error('Upload error:', error);

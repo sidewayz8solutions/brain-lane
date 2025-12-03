@@ -30,66 +30,92 @@ export const UploadFile = async ({ file }) => {
 };
 
 export const ExtractZipContents = async (file) => {
-  const zip = new JSZip();
-  const contents = await zip.loadAsync(file);
-  
-  const fileTree = [];
-  const fileContents = {};
-  
-  const processEntry = async (relativePath, zipEntry) => {
-    if (zipEntry.dir) {
-      return { name: relativePath, type: 'directory', children: [] };
-    }
+  try {
+    console.log('Starting ZIP extraction for file:', file.name, 'Size:', (file.size / 1024 / 1024).toFixed(2), 'MB');
     
-    // Only process text-based files
-    const textExtensions = ['.js', '.jsx', '.ts', '.tsx', '.json', '.css', '.scss', '.html', '.md', '.txt', '.py', '.rb', '.go', '.rs', '.java', '.vue', '.svelte'];
-    const isTextFile = textExtensions.some(ext => relativePath.toLowerCase().endsWith(ext));
+    const zip = new JSZip();
+    const contents = await zip.loadAsync(file);
     
-    if (isTextFile && zipEntry._data?.uncompressedSize < 500000) { // Skip files > 500KB
-      try {
-        const content = await zipEntry.async('string');
-        fileContents[relativePath] = content;
-      } catch (e) {
-        console.warn(`Could not read ${relativePath}:`, e);
+    console.log('ZIP loaded, processing entries...');
+    
+    const fileTree = [];
+    const fileContents = {};
+    
+    const processEntry = async (relativePath, zipEntry) => {
+      if (zipEntry.dir) {
+        return { name: relativePath, type: 'directory', children: [] };
+      }
+      
+      // Only process text-based files
+      const textExtensions = ['.js', '.jsx', '.ts', '.tsx', '.json', '.css', '.scss', '.html', '.md', '.txt', '.py', '.rb', '.go', '.rs', '.java', '.vue', '.svelte'];
+      const isTextFile = textExtensions.some(ext => relativePath.toLowerCase().endsWith(ext));
+      
+      // Skip node_modules, dist, build folders for performance
+      const skipFolders = ['node_modules/', 'dist/', 'build/', '.git/', 'vendor/', '__pycache__/'];
+      const shouldSkip = skipFolders.some(folder => relativePath.includes(folder));
+      
+      if (isTextFile && !shouldSkip && zipEntry._data?.uncompressedSize < 500000) { // Skip files > 500KB
+        try {
+          const content = await zipEntry.async('string');
+          fileContents[relativePath] = content;
+        } catch (e) {
+          console.warn(`Could not read ${relativePath}:`, e);
+        }
+      }
+      
+      return { name: relativePath, type: 'file', size: zipEntry._data?.uncompressedSize || 0 };
+    };
+    
+    // Build file tree
+    const entries = [];
+    const allFiles = Object.entries(contents.files);
+    console.log('Total entries in ZIP:', allFiles.length);
+    
+    for (const [path, entry] of allFiles) {
+      if (!path.startsWith('__MACOSX') && !path.startsWith('.')) {
+        entries.push(await processEntry(path, entry));
       }
     }
     
-    return { name: relativePath, type: 'file', size: zipEntry._data?.uncompressedSize || 0 };
-  };
-  
-  // Build file tree
-  const entries = [];
-  for (const [path, entry] of Object.entries(contents.files)) {
-    if (!path.startsWith('__MACOSX') && !path.startsWith('.')) {
-      entries.push(await processEntry(path, entry));
-    }
-  }
-  
-  // Organize into tree structure
-  const root = { name: '', type: 'directory', children: [] };
-  
-  entries.forEach(entry => {
-    const parts = entry.name.split('/').filter(Boolean);
-    let current = root;
+    console.log('Processed entries:', entries.length);
     
-    parts.forEach((part, index) => {
-      let child = current.children?.find(c => c.name === part);
-      if (!child) {
-        child = index === parts.length - 1 && entry.type === 'file'
-          ? { name: part, type: 'file', path: entry.name, size: entry.size }
-          : { name: part, type: 'directory', children: [] };
-        current.children = current.children || [];
-        current.children.push(child);
-      }
-      current = child;
+    // Organize into tree structure
+    const root = { name: '', type: 'directory', children: [] };
+    
+    entries.forEach(entry => {
+      const parts = entry.name.split('/').filter(Boolean);
+      let current = root;
+      
+      parts.forEach((part, index) => {
+        let child = current.children?.find(c => c.name === part);
+        if (!child) {
+          child = index === parts.length - 1 && entry.type === 'file'
+            ? { name: part, type: 'file', path: entry.name, size: entry.size }
+            : { name: part, type: 'directory', children: [] };
+          current.children = current.children || [];
+          current.children.push(child);
+        }
+        current = child;
+      });
     });
-  });
-  
-  return {
-    fileTree: root.children || [],
-    fileContents,
-    totalFiles: Object.keys(fileContents).length
-  };
+    
+    console.log('Extraction complete. Files with content:', Object.keys(fileContents).length);
+    
+    return {
+      fileTree: root.children || [],
+      fileContents,
+      totalFiles: Object.keys(fileContents).length
+    };
+  } catch (error) {
+    console.error('Error extracting ZIP:', error);
+    // Return empty result instead of throwing
+    return {
+      fileTree: [],
+      fileContents: {},
+      totalFiles: 0,
+      error: error.message
+    };
+  }
 };
 
 export const AnalyzeProjectStructure = (fileTree, fileContents) => {
