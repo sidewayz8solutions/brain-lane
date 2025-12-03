@@ -5,7 +5,7 @@ const AI_CONFIG = {
   // For demo mode, we'll use mock responses
   // In production, set VITE_OPENAI_API_KEY in .env
   apiKey: import.meta.env.VITE_OPENAI_API_KEY || null,
-  model: 'gpt-4-turbo-preview',
+  model: 'gpt-4o', // Better at structured JSON output
   demoMode: !import.meta.env.VITE_OPENAI_API_KEY,
 };
 
@@ -108,8 +108,16 @@ export const InvokeLLM = async ({ prompt, response_json_schema, add_context_from
       },
       body: JSON.stringify({
         model: AI_CONFIG.model,
-        messages: [{ role: 'user', content: prompt }],
+        messages: [
+          { 
+            role: 'system', 
+            content: 'You are a senior software architect. Always respond with valid JSON. Keep responses concise but comprehensive.' 
+          },
+          { role: 'user', content: prompt }
+        ],
         response_format: response_json_schema ? { type: 'json_object' } : undefined,
+        max_tokens: 4000, // Ensure complete response
+        temperature: 0.7,
       }),
     });
     
@@ -121,8 +129,27 @@ export const InvokeLLM = async ({ prompt, response_json_schema, add_context_from
     
     const data = await response.json();
     console.log('✅ OpenAI API Response received');
+    
     const content = data.choices[0]?.message?.content;
-    return response_json_schema ? JSON.parse(content) : content;
+    console.log('📝 Response content length:', content?.length || 0);
+    
+    // Check if response was cut off
+    if (data.choices[0]?.finish_reason === 'length') {
+      console.warn('⚠️ Response was truncated, using mock data');
+      return getMockResponse(prompt, {});
+    }
+    
+    if (response_json_schema) {
+      try {
+        return JSON.parse(content);
+      } catch (parseError) {
+        console.error('❌ JSON Parse Error:', parseError.message);
+        console.log('📄 Raw content:', content?.substring(0, 500));
+        return getMockResponse(prompt, {});
+      }
+    }
+    
+    return content;
   } catch (error) {
     console.error('❌ AI Service Error:', error);
     console.log('⚠️ Falling back to mock data...');

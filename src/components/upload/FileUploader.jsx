@@ -273,9 +273,9 @@ export default function FileUploader({ onUpload, isUploading }) {
                                     >
                                         <OrbitalSpinner size="lg" className="mx-auto" />
                                         <div>
-                                            <p className="text-[#FFE566] font-medium mb-2">Uploading & Analyzing...</p>
+                                            <p className="text-cyan-400 font-medium mb-2">Uploading & Analyzing...</p>
                                             <AnimatedProgress progress={uploadProgress} className="w-48 mx-auto" />
-                                            <p className="text-[#FFE566]/60 text-sm mt-2">{Math.round(uploadProgress)}%</p>
+                                            <p className="text-cyan-400/60 text-sm mt-2">{Math.round(uploadProgress)}%</p>
                                         </div>
                                     </motion.div>
                                 ) : selectedFile ? (
@@ -426,9 +426,9 @@ export default function FileUploader({ onUpload, isUploading }) {
                             >
                                 <OrbitalSpinner size="lg" className="mx-auto" />
                                 <div>
-                                    <p className="text-white font-medium mb-2">Cloning Repository...</p>
+                                    <p className="text-cyan-400 font-medium mb-2">Cloning Repository...</p>
                                     <AnimatedProgress progress={uploadProgress} className="w-48 mx-auto" />
-                                    <p className="text-gray-400 text-sm mt-2">Analyzing code structure</p>
+                                    <p className="text-cyan-400/60 text-sm mt-2">Analyzing code structure</p>
                                 </div>
                             </motion.div>
                         ) : (
