@@ -87,29 +87,30 @@ export default function Home() {
 
     // Vibrant color classes matching ProjectHealth dashboard
     const colorClasses = {
-        cyan: {
-            bg: 'from-cyan-500/20 to-cyan-500/5',
-            border: 'border-cyan-500/30 hover:border-cyan-400/60',
-            icon: 'text-cyan-400',
-            glow: 'group-hover:shadow-cyan-500/20'
-        },
         purple: {
-            bg: 'from-purple-500/20 to-purple-500/5',
-            border: 'border-purple-500/30 hover:border-purple-400/60',
-            icon: 'text-purple-400',
-            glow: 'group-hover:shadow-purple-500/20'
+            bg: 'from-[#461D7C]/16 to-[#6B3FA0]/6',
+            border: 'border-[#461D7C]/30 hover:border-[#6B3FA0]/50',
+            icon: 'text-[#6B3FA0]',
+            glow: 'group-hover:shadow-[#6B3FA0]/20'
         },
-        green: {
-            bg: 'from-green-500/20 to-green-500/5',
-            border: 'border-green-500/30 hover:border-green-400/60',
-            icon: 'text-green-400',
-            glow: 'group-hover:shadow-green-500/20'
+        gold: {
+            bg: 'from-[#461D7C]/18 to-[#FFE566]/6',
+            border: 'border-[#FFE566]/30 hover:border-[#FFE566]/50',
+            icon: 'text-[#FFE566]',
+            glow: 'group-hover:shadow-[#FFE566]/20'
+        },
+        // fallback vibrant accents for small places
+        cyan: {
+            bg: 'from-cyan-500/12 to-cyan-500/4',
+            border: 'border-cyan-500/20 hover:border-cyan-400/40',
+            icon: 'text-cyan-400',
+            glow: 'group-hover:shadow-cyan-500/12'
         },
         orange: {
-            bg: 'from-orange-500/20 to-orange-500/5',
-            border: 'border-orange-500/30 hover:border-orange-400/60',
+            bg: 'from-orange-500/12 to-orange-500/4',
+            border: 'border-orange-500/20 hover:border-orange-400/40',
             icon: 'text-orange-400',
-            glow: 'group-hover:shadow-orange-500/20'
+            glow: 'group-hover:shadow-orange-500/12'
         }
     };
 
@@ -147,40 +148,44 @@ export default function Home() {
         <div className="min-h-screen bg-slate-950 text-white overflow-x-hidden relative">
             {/* Animated Background - Vibrant Multi-color Theme */}
             <div className="fixed inset-0 overflow-hidden pointer-events-none">
-                {/* Gradient orbs - Vibrant Colors */}
-                <motion.div
-                    className="absolute top-0 left-1/4 w-[600px] h-[600px] bg-cyan-600/20 rounded-full blur-[120px]"
-                    animate={{
-                        x: [0, 100, 0],
-                        y: [0, 50, 0],
-                        scale: [1, 1.2, 1]
-                    }}
-                    transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
-                />
-                <motion.div
-                    className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-purple-600/15 rounded-full blur-[100px]"
-                    animate={{
-                        x: [0, -80, 0],
-                        y: [0, -60, 0],
-                        scale: [1, 1.1, 1]
-                    }}
-                    transition={{ duration: 15, repeat: Infinity, ease: "easeInOut" }}
-                />
-                <motion.div
-                    className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] bg-green-600/10 rounded-full blur-[80px]"
-                    animate={{ scale: [1, 1.3, 1] }}
-                    transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
-                />
-                <motion.div
-                    className="absolute bottom-1/4 left-1/4 w-[300px] h-[300px] bg-orange-600/10 rounded-full blur-[80px]"
-                    animate={{ 
-                        x: [0, 50, 0],
-                        scale: [1, 1.2, 1] 
-                    }}
-                    transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
-                />
-                {/* Grid overlay */}
-                <div className="absolute inset-0 bg-[linear-gradient(rgba(6,182,212,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(6,182,212,0.03)_1px,transparent_1px)] bg-[size:60px_60px]" />
+                    {/* Gradient orbs - Metallic Purple & Gold Theme */}
+                    <motion.div
+                        className="absolute top-0 left-1/4 w-[640px] h-[640px] rounded-full blur-[120px] metallic-purple-bg opacity-60"
+                        style={{ filter: 'blur(120px)' }}
+                        animate={{
+                            x: [0, 120, 0],
+                            y: [0, 40, 0],
+                            scale: [1, 1.15, 1]
+                        }}
+                        transition={{ duration: 22, repeat: Infinity, ease: "easeInOut" }}
+                    />
+                    <motion.div
+                        className="absolute bottom-0 right-1/4 w-[520px] h-[520px] rounded-full blur-[100px] metallic-gold-bg opacity-50"
+                        style={{ filter: 'blur(100px)' }}
+                        animate={{
+                            x: [0, -80, 0],
+                            y: [0, -60, 0],
+                            scale: [1, 1.08, 1]
+                        }}
+                        transition={{ duration: 18, repeat: Infinity, ease: "easeInOut" }}
+                    />
+                    <motion.div
+                        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[420px] h-[420px] rounded-full blur-[90px] metallic-purple-bg opacity-40"
+                        style={{ filter: 'blur(90px)' }}
+                        animate={{ scale: [1, 1.25, 1] }}
+                        transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
+                    />
+                    <motion.div
+                        className="absolute bottom-1/4 left-1/4 w-[320px] h-[320px] rounded-full blur-[80px] metallic-gold-bg opacity-35"
+                        style={{ filter: 'blur(80px)' }}
+                        animate={{ 
+                            x: [0, 40, 0],
+                            scale: [1, 1.12, 1] 
+                        }}
+                        transition={{ duration: 14, repeat: Infinity, ease: "easeInOut" }}
+                    />
+                    {/* Grid overlay subtle gold lines */}
+                    <div className="absolute inset-0 bg-[linear-gradient(rgba(255,229,102,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,229,102,0.02)_1px,transparent_1px)] bg-[size:80px_80px]" />
                 {/* Floating particles */}
                 <FloatingParticles count={15} />
             </div>
@@ -215,13 +220,13 @@ export default function Home() {
                                     }
                                 }}
                             >
-                                <div className="absolute inset-0 bg-gradient-to-br from-cyan-500 via-purple-500 to-[#FFE566] rounded-2xl blur-xl opacity-60 animate-pulse" />
-                                <div className="relative w-16 h-16 bg-gradient-to-br from-cyan-500 via-purple-500 to-[#FFE566] rounded-2xl flex items-center justify-center shadow-2xl shadow-cyan-500/30 border border-cyan-400/20">
-                                    <Brain className="w-9 h-9 text-white" />
+                                <div className="absolute inset-0 rounded-2xl opacity-80 metallic-purple-bg" />
+                                <div className="relative w-16 h-16 rounded-2xl flex items-center justify-center shadow-2xl metallic-purple-border metallic-gold-bg">
+                                    <Brain className="w-9 h-9 text-[#461D7C]" />
                                 </div>
                             </motion.div>
                             <motion.h1
-                                className="text-4xl font-bold text-[#FFE566] glow-gold"
+                                className="text-4xl font-bold text-[#FFE566] glow-metallic-gold"
                                 initial={{ opacity: 0, x: -20 }}
                                 animate={{ opacity: 1, x: 0 }}
                                 transition={{ delay: 0.3 }}
@@ -233,8 +238,8 @@ export default function Home() {
                         {/* Headline */}
                         <motion.div variants={itemVariants} className="mb-8">
                             <h2 className="text-5xl md:text-7xl font-bold leading-tight tracking-tight">
-                                <span className="block text-[#FFE566] glow-gold-subtle mb-3">AI That Finishes</span>
-                                <span className="bg-gradient-to-r from-cyan-400 via-purple-400 to-[#FFE566] bg-clip-text text-transparent">
+                                <span className="block text-[#FFE566] glow-metallic-gold mb-3">AI That Finishes</span>
+                                <span className="bg-gradient-to-r from-[#461D7C] via-[#6B3FA0] to-[#FFE566] bg-clip-text text-transparent">
                                     Your Code
                                 </span>
                             </h2>
@@ -333,18 +338,18 @@ export default function Home() {
                         <div className="relative">
                             {/* Glow effect behind card - Vibrant gradient */}
                             <motion.div 
-                                className="absolute -inset-2 bg-gradient-to-r from-cyan-500/30 via-purple-500/30 to-green-500/30 rounded-[2rem] blur-2xl"
+                                className="absolute -inset-2 rounded-[2rem] blur-2xl metallic-purple-bg opacity-40"
                                 animate={{
-                                    opacity: [0.3, 0.5, 0.3],
+                                    opacity: [0.25, 0.5, 0.25],
                                 }}
                                 transition={{
-                                    duration: 4,
+                                    duration: 5,
                                     repeat: Infinity,
                                     ease: "easeInOut"
                                 }}
                             />
 
-                            <div className="relative bg-slate-900/80 backdrop-blur-2xl rounded-3xl border border-cyan-500/30 p-8 shadow-2xl">
+                            <div className="relative bg-slate-900/80 backdrop-blur-2xl rounded-3xl border metallic-purple-border p-8 shadow-2xl">
                                 <motion.div
                                     className="flex items-center gap-2 justify-center mb-6"
                                     initial={{ opacity: 0 }}

@@ -174,6 +174,29 @@ button:focus-visible {
   text-shadow: 0 0 10px #461D7C, 0 0 20px #461D7C, 0 0 30px #6B3FA0;
 }
 
+/* Metallic Gold & Purple helpers */
+.metallic-gold-bg {
+  background: linear-gradient(135deg, #FFE566 0%, #FFF2C2 40%, #FFED9A 100%);
+  box-shadow: 0 6px 20px rgba(255,229,102,0.12), inset 0 1px 0 rgba(255,255,255,0.35);
+}
+
+.metallic-purple-bg {
+  background: linear-gradient(135deg, #461D7C 0%, #6B3FA0 45%, #A77ED2 100%);
+  box-shadow: 0 6px 30px rgba(70,29,124,0.12), inset 0 1px 0 rgba(255,255,255,0.06);
+}
+
+.metallic-gold-border {
+  border: 1px solid rgba(255,229,102,0.18);
+}
+
+.metallic-purple-border {
+  border: 1px solid rgba(70,29,124,0.18);
+}
+
+.glow-metallic-gold {
+  text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000, 0 0 12px #FFE566, 0 0 24px #FFD14D;
+}
+
 /* Vibrant Color Glow Effects */
 .glow-cyan {
   text-shadow: 0 0 10px #06b6d4, 0 0 20px #06b6d4, 0 0 30px #0891b2;
