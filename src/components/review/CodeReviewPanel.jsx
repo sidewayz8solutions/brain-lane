@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { base44 } from '@/api/base44Client';
 import { motion } from 'framer-motion';
+import { InvokeLLM } from '@/services/aiService';
 import { cn } from "@/lib/utils";
 import { Button } from '@/components/ui/button';
 import { 
@@ -103,7 +103,7 @@ export default function CodeReviewPanel({ diff, onReviewComplete, isReviewing, s
                 diffContent += `MODIFIED:\n${file.modified?.substring(0, 3000) || '(deleted)'}\n`;
             }
 
-            const result = await base44.integrations.Core.InvokeLLM({
+            const result = await InvokeLLM({
                 prompt: `You are an expert code reviewer. Analyze these code changes and provide a thorough review.
 
 CODE CHANGES:
@@ -120,11 +120,11 @@ If the code looks good, say so - don't invent issues.`,
                 response_json_schema: {
                     type: "object",
                     properties: {
-                        overall_score: { 
+                        overall_score: {
                             type: "number",
                             description: "Score from 1-10, where 10 is perfect"
                         },
-                        summary: { 
+                        summary: {
                             type: "string",
                             description: "Brief overall assessment"
                         },

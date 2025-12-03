@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { base44 } from '@/api/base44Client';
 import { motion, AnimatePresence } from 'framer-motion';
+import { InvokeLLM } from '@/services/aiService';
+import { useTaskStore } from '@/store/projectStore';
 import { 
     Play, 
     Square, 
@@ -206,6 +207,8 @@ export default function AgentExecutor({ task, project, onComplete }) {
     const messagesEndRef = useRef(null);
     const logsEndRef = useRef(null);
 
+    const updateTask = useTaskStore((state) => state.updateTask);
+
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
         logsEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -263,7 +266,7 @@ export default function AgentExecutor({ task, project, onComplete }) {
 
     const startExecution = async () => {
         if (!task || !project) return;
-        
+
         setStatus('running');
         setLogs([]);
         setMessages([]);
@@ -275,20 +278,10 @@ export default function AgentExecutor({ task, project, onComplete }) {
 
         try {
             addLog('running', 'Creating agent conversation...');
-            const conversation = await base44.agents.createConversation({
-                agent_name: 'code_executor',
-                metadata: {
-                    name: `Task: ${task.title}`,
-                    task_id: task.id,
-                    project_id: project.id
-                }
-            });
-            setConversationId(conversation.id);
+            // Generate a local conversation ID
+            const convId = `conv_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+            setConversationId(convId);
             addLog('success', 'Agent conversation created');
-
-            const unsubscribe = base44.agents.subscribeToConversation(conversation.id, (data) => {
-                setMessages(data.messages || []);
-            });
 
             const taskPrompt = `Execute the following task in the sandbox environment:
 
@@ -310,13 +303,19 @@ Workflow:
 Start execution now.`;
 
             addLog('running', 'Sending task to agent...');
-            await base44.agents.addMessage(conversation, {
-                role: 'user',
-                content: taskPrompt
+
+            // Add user message to local state
+            setMessages(prev => [...prev, { role: 'user', content: taskPrompt }]);
+
+            // Call AI service for response
+            const response = await InvokeLLM({
+                prompt: taskPrompt,
+                system_prompt: 'You are a code execution agent. Analyze the task and provide step-by-step execution plan with code modifications.'
             });
 
-            addLog('success', 'Task sent, awaiting response...');
-            return () => unsubscribe();
+            // Add assistant response
+            setMessages(prev => [...prev, { role: 'assistant', content: response }]);
+            addLog('success', 'Task sent, response received');
 
         } catch (error) {
             console.error('Execution error:', error);
@@ -357,11 +356,17 @@ Start execution now.`;
         setInputMessage('');
 
         try {
-            const conversation = await base44.agents.getConversation(conversationId);
-            await base44.agents.addMessage(conversation, {
-                role: 'user',
-                content: message
+            // Add user message to local state
+            setMessages(prev => [...prev, { role: 'user', content: message }]);
+
+            // Call AI service for response
+            const response = await InvokeLLM({
+                prompt: message,
+                system_prompt: 'You are a code execution agent. Continue assisting with the task execution.'
             });
+
+            // Add assistant response
+            setMessages(prev => [...prev, { role: 'assistant', content: response }]);
         } catch (error) {
             addLog('error', 'Failed to send message', error.message);
         } finally {

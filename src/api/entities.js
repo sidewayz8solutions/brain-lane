@@ -1,11 +1,7 @@
-import { base44 } from './base44Client';
+import { brainLane } from './base44Client';
 
+export const Project = brainLane.entities.Project;
+export const Task = brainLane.entities.Task;
 
-export const Project = base44.entities.Project;
-
-export const Task = base44.entities.Task;
-
-
-
-// auth sdk:
-export const User = base44.auth;
+// Auth SDK
+export const User = brainLane.auth;

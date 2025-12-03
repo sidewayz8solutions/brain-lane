@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useProjectStore, useTaskStore } from '@/store/projectStore';
+import { InvokeLLM } from '@/services/aiService';
 import { 
     ArrowLeft, 
     Play, 
@@ -55,8 +55,7 @@ export default function TaskView() {
     const urlParams = new URLSearchParams(window.location.search);
     const projectId = urlParams.get('projectId');
     const initialTaskId = urlParams.get('taskId');
-    const queryClient = useQueryClient();
-    
+
     const [selectedTaskId, setSelectedTaskId] = useState(initialTaskId);
     const [selectedForBatch, setSelectedForBatch] = useState(new Set());
     const [isImplementing, setIsImplementing] = useState(false);
@@ -78,17 +77,13 @@ export default function TaskView() {
     const [sortBy, setSortBy] = useState('smart');
     const [filters, setFilters] = useState({});
 
-    const { data: project } = useQuery({
-        queryKey: ['project', projectId],
-        queryFn: () => base44.entities.Project.filter({ id: projectId }).then(res => res[0]),
-        enabled: !!projectId
-    });
+    // Use Zustand stores
+    const getProject = useProjectStore((state) => state.getProject);
+    const project = getProject(projectId);
 
-    const { data: tasks = [] } = useQuery({
-        queryKey: ['tasks', projectId],
-        queryFn: () => base44.entities.Task.filter({ project_id: projectId }),
-        enabled: !!projectId
-    });
+    const tasksStore = useTaskStore((state) => state.tasks);
+    const updateTask = useTaskStore((state) => state.updateTask);
+    const tasks = tasksStore.filter(t => t.project_id === projectId);
 
     const selectedTask = tasks.find(t => t.id === selectedTaskId);
     
@@ -167,13 +162,12 @@ export default function TaskView() {
         if (!task || !project) return;
 
         // Update status to in_progress
-        await base44.entities.Task.update(task.id, { status: 'in_progress' });
-        queryClient.invalidateQueries(['tasks', projectId]);
+        updateTask(task.id, { status: 'in_progress' });
 
         // Get relevant file contents
         const fileContents = project?.file_contents || {};
         let relevantCode = '';
-        
+
         // Get files that will be affected
         const affectedFiles = task.files_affected || [];
         for (const filePath of affectedFiles) {
@@ -193,7 +187,7 @@ export default function TaskView() {
         }
 
         // Call LLM to implement the task
-        const result = await base44.integrations.Core.InvokeLLM({
+        const result = await InvokeLLM({
             prompt: `You are an expert developer. Implement the following task for this codebase.
 
 TASK: ${task.title}
@@ -239,7 +233,7 @@ Be thorough and ensure the code is production-ready.`,
         }));
 
         // Update task with diff
-        await base44.entities.Task.update(task.id, {
+        updateTask(task.id, {
             status: 'completed',
             diff: {
                 files: files,
@@ -257,11 +251,9 @@ Be thorough and ensure the code is production-ready.`,
 
         try {
             await implementSingleTask(selectedTask);
-            queryClient.invalidateQueries(['tasks', projectId]);
         } catch (error) {
             console.error('Implementation error:', error);
-            await base44.entities.Task.update(selectedTask.id, { status: 'pending' });
-            queryClient.invalidateQueries(['tasks', projectId]);
+            updateTask(selectedTask.id, { status: 'pending' });
         } finally {
             setIsImplementing(false);
         }
@@ -274,7 +266,7 @@ Be thorough and ensure the code is production-ready.`,
 
         const taskIds = Array.from(selectedForBatch);
         const BATCH_SIZE = 3; // Process 3 tasks concurrently
-        
+
         for (let i = 0; i < taskIds.length; i += BATCH_SIZE) {
             const batch = taskIds.slice(i, i + BATCH_SIZE);
             const batchPromises = batch.map(async (taskId) => {
@@ -285,42 +277,37 @@ Be thorough and ensure the code is production-ready.`,
                     await implementSingleTask(task);
                 } catch (error) {
                     console.error(`Error implementing task ${taskId}:`, error);
-                    await base44.entities.Task.update(taskId, { status: 'pending' });
+                    updateTask(taskId, { status: 'pending' });
                 }
             });
-            
+
             await Promise.all(batchPromises);
-            queryClient.invalidateQueries(['tasks', projectId]);
         }
 
         setSelectedForBatch(new Set());
         setIsBatchRunning(false);
-        queryClient.invalidateQueries(['tasks', projectId]);
     };
 
-    const approveTask = async () => {
+    const approveTask = () => {
         if (!selectedTask) return;
-        await base44.entities.Task.update(selectedTask.id, { status: 'approved' });
-        queryClient.invalidateQueries(['tasks', projectId]);
+        updateTask(selectedTask.id, { status: 'approved' });
     };
 
-    const rejectTask = async () => {
+    const rejectTask = () => {
         if (!selectedTask) return;
-        await base44.entities.Task.update(selectedTask.id, { 
+        updateTask(selectedTask.id, {
             status: 'rejected',
             diff: null
         });
-        queryClient.invalidateQueries(['tasks', projectId]);
     };
 
-    const resetTask = async () => {
+    const resetTask = () => {
         if (!selectedTask) return;
-        await base44.entities.Task.update(selectedTask.id, { 
+        updateTask(selectedTask.id, {
             status: 'pending',
             diff: null,
             ai_explanation: null
         });
-        queryClient.invalidateQueries(['tasks', projectId]);
     };
 
     const downloadPatch = () => {

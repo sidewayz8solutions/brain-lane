@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { base44 } from '@/api/base44Client';
 import { cn } from '@/lib/utils';
+import { InvokeLLM } from '@/services/aiService';
 import {
     Sparkles,
     Loader2,
@@ -49,7 +49,7 @@ export default function AITextGenerator({ context, onInsert, className }) {
                 ? `Context:\n${context}\n\nRequest: ${prompt}`
                 : prompt;
 
-            const response = await base44.integrations.Core.InvokeLLM({
+            const response = await InvokeLLM({
                 prompt: fullPrompt,
                 response_json_schema: {
                     type: "object",

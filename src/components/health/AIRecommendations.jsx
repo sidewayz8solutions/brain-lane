@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { base44 } from '@/api/base44Client';
 import { cn } from '@/lib/utils';
+import { InvokeLLM } from '@/services/aiService';
 import {
     Sparkles,
     Zap,
@@ -230,7 +230,7 @@ export default function AIRecommendations({ metrics, workflowData, project }) {
     const generateNewRecommendations = async () => {
         setIsGenerating(true);
         try {
-            const result = await base44.integrations.Core.InvokeLLM({
+            const result = await InvokeLLM({
                 prompt: `Analyze these project metrics and generate 3 specific, actionable recommendations to improve workflow efficiency:
 
 Metrics:

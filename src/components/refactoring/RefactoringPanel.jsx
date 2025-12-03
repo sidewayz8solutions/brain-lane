@@ -1,16 +1,20 @@
 import React, { useState } from 'react';
-import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Loader2, Wand2, AlertCircle } from 'lucide-react';
 import RefactoringGoalSelector, { REFACTORING_GOALS } from './RefactoringGoalSelector';
 import { motion } from 'framer-motion';
+import { useProjectStore, useTaskStore } from '@/store/projectStore';
+import { InvokeLLM } from '@/services/aiService';
 
 export default function RefactoringPanel({ project, onTasksGenerated }) {
     const [selectedGoals, setSelectedGoals] = useState([]);
     const [customInstructions, setCustomInstructions] = useState('');
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [error, setError] = useState(null);
+
+    const updateProject = useProjectStore((state) => state.updateProject);
+    const createTask = useTaskStore((state) => state.createTask);
 
     const generateRefactoringPlan = async () => {
         if (selectedGoals.length === 0) return;
@@ -42,7 +46,7 @@ export default function RefactoringPanel({ project, onTasksGenerated }) {
                 .map(g => `- ${g.title}: ${g.description}`)
                 .join('\n');
 
-            const result = await base44.integrations.Core.InvokeLLM({
+            const result = await InvokeLLM({
                 prompt: `You are an expert software architect specializing in code refactoring. Analyze this codebase and create a comprehensive refactoring plan.
 
 REFACTORING GOALS:
@@ -88,21 +92,21 @@ Generate tasks that build on each other progressively.`,
                                 properties: {
                                     title: { type: "string" },
                                     description: { type: "string" },
-                                    category: { 
-                                        type: "string", 
-                                        enum: ["refactor", "feature", "bugfix", "test", "documentation", "security"] 
+                                    category: {
+                                        type: "string",
+                                        enum: ["refactor", "feature", "bugfix", "test", "documentation", "security"]
                                     },
-                                    priority: { 
-                                        type: "string", 
-                                        enum: ["critical", "high", "medium", "low"] 
+                                    priority: {
+                                        type: "string",
+                                        enum: ["critical", "high", "medium", "low"]
                                     },
-                                    estimated_effort: { 
-                                        type: "string", 
-                                        enum: ["small", "medium", "large"] 
+                                    estimated_effort: {
+                                        type: "string",
+                                        enum: ["small", "medium", "large"]
                                     },
-                                    files_affected: { 
-                                        type: "array", 
-                                        items: { type: "string" } 
+                                    files_affected: {
+                                        type: "array",
+                                        items: { type: "string" }
                                     },
                                     depends_on: {
                                         type: "array",
@@ -117,11 +121,11 @@ Generate tasks that build on each other progressively.`,
                 }
             });
 
-            // Create tasks in database
+            // Create tasks using Zustand store
             const createdTasks = [];
             for (let i = 0; i < result.tasks.length; i++) {
                 const task = result.tasks[i];
-                const created = await base44.entities.Task.create({
+                const created = createTask({
                     project_id: project.id,
                     title: task.title,
                     description: `${task.description}\n\n**Expected Outcome:** ${task.expected_outcome || 'Improved code quality'}`,
@@ -130,7 +134,7 @@ Generate tasks that build on each other progressively.`,
                     estimated_effort: task.estimated_effort || 'medium',
                     files_affected: task.files_affected || [],
                     status: 'pending',
-                    steps: task.depends_on?.length > 0 
+                    steps: task.depends_on?.length > 0
                         ? [{ order: 1, description: `Depends on tasks: ${task.depends_on.map(d => d + 1).join(', ')}`, completed: false }]
                         : []
                 });
@@ -138,7 +142,7 @@ Generate tasks that build on each other progressively.`,
             }
 
             // Update project with analysis
-            await base44.entities.Project.update(project.id, {
+            updateProject(project.id, {
                 summary: result.analysis_summary,
                 issues: result.critical_issues?.map((desc, idx) => ({
                     type: 'refactoring',

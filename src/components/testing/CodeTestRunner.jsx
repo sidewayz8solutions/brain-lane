@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { base44 } from '@/api/base44Client';
 import { cn } from '@/lib/utils';
+import { InvokeLLM } from '@/services/aiService';
 import {
     Play,
     Square,
@@ -113,7 +113,7 @@ export default function CodeTestRunner({ project, task, diff, onTestComplete }) 
             addLog(`Analyzing changes in: ${changedFiles}`, 'info');
 
             // Use AI to simulate test execution based on code changes
-            const result = await base44.integrations.Core.InvokeLLM({
+            const result = await InvokeLLM({
                 prompt: `You are a test execution engine. Analyze the following code changes and simulate running tests.
 
 PROJECT: ${project?.name}

@@ -1,12 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
 import { motion } from 'framer-motion';
-import { 
-    Brain, 
-    Loader2, 
-    FolderTree, 
-    AlertTriangle, 
+import {
+    Brain,
+    Loader2,
+    FolderTree,
+    AlertTriangle,
     ListTodo,
     Sparkles,
     ArrowLeft,
@@ -37,26 +35,25 @@ import TestSuggestionsPanel from '../components/analysis/TestSuggestionsPanel';
 import ArchitectureDiagram from '../components/visualization/ArchitectureDiagram';
 import DependencyGraph from '../components/visualization/DependencyGraph';
 import ComplexityMetrics from '../components/visualization/ComplexityMetrics';
+import { useProjectStore, useTaskStore } from '@/store/projectStore';
+import { InvokeLLM } from '@/services/aiService';
 
 export default function ProjectAnalysis() {
     const urlParams = new URLSearchParams(window.location.search);
     const projectId = urlParams.get('id');
-    const queryClient = useQueryClient();
-    
+
     const [isAnalyzing, setIsAnalyzing] = useState(false);
 
-    const { data: project, isLoading } = useQuery({
-        queryKey: ['project', projectId],
-        queryFn: () => base44.entities.Project.filter({ id: projectId }).then(res => res[0]),
-        enabled: !!projectId,
-        refetchInterval: (data) => data?.status === 'analyzing' ? 2000 : false
-    });
+    // Use Zustand stores
+    const getProject = useProjectStore((state) => state.getProject);
+    const updateProject = useProjectStore((state) => state.updateProject);
+    const project = getProject(projectId);
 
-    const { data: tasks = [] } = useQuery({
-        queryKey: ['tasks', projectId],
-        queryFn: () => base44.entities.Task.filter({ project_id: projectId }),
-        enabled: !!projectId
-    });
+    const tasksStore = useTaskStore((state) => state.tasks);
+    const createTask = useTaskStore((state) => state.createTask);
+
+    // Filter tasks for this project
+    const tasks = tasksStore.filter(t => t.project_id === projectId);
 
     // Run analysis when project is in analyzing state
     useEffect(() => {
@@ -70,39 +67,9 @@ export default function ProjectAnalysis() {
         setIsAnalyzing(true);
 
         try {
-            let extractedData = null;
+            // Use file_contents that were already extracted during upload
             let fileContents = project.file_contents || {};
-            
-            // If we have a ZIP file URL, extract data from it
-            if (project.zip_file_url) {
-                extractedData = await base44.integrations.Core.ExtractDataFromUploadedFile({
-                    file_url: project.zip_file_url,
-                    json_schema: {
-                        type: "object",
-                        properties: {
-                            files: {
-                                type: "array",
-                                items: {
-                                    type: "object",
-                                    properties: {
-                                        path: { type: "string" },
-                                        content: { type: "string" }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                });
-                
-                if (extractedData.status === 'success' && extractedData.output?.files) {
-                    for (const file of extractedData.output.files) {
-                        if (file.path && file.content) {
-                            fileContents[file.path] = file.content;
-                        }
-                    }
-                }
-            }
-            
+
             // Build context from file contents
             const fileList = Object.keys(fileContents).join('\n') || 'No files extracted';
             
@@ -134,7 +101,7 @@ export default function ProjectAnalysis() {
                 ? `Analyze the uploaded ZIP file and provide a comprehensive codebase analysis.`
                 : `Analyze the GitHub repository at ${project.github_url} and provide a comprehensive codebase analysis.`;
 
-            const analysisResult = await base44.integrations.Core.InvokeLLM({
+            const analysisResult = await InvokeLLM({
                 prompt: `${analysisPrompt}
 
             You are a senior full-stack engineer and security specialist performing a comprehensive code review.
@@ -192,8 +159,6 @@ export default function ProjectAnalysis() {
             - Documentation needed
 
             Be specific, actionable, and reference exact files/functions when possible.`,
-                file_urls: project.zip_file_url ? [project.zip_file_url] : undefined,
-                add_context_from_internet: project.github_url ? true : false,
                 response_json_schema: {
                     type: "object",
                     properties: {
@@ -304,8 +269,8 @@ export default function ProjectAnalysis() {
                 size: fileContents[path]?.length || 0
             }));
 
-            // Update project with analysis results
-            await base44.entities.Project.update(project.id, {
+            // Update project with analysis results using Zustand store
+            updateProject(project.id, {
                 summary: analysisResult.summary,
                 detected_stack: analysisResult.detected_stack,
                 architecture: analysisResult.architecture,
@@ -318,10 +283,10 @@ export default function ProjectAnalysis() {
                 status: 'ready'
             });
 
-            // Create tasks
+            // Create tasks using Zustand store
             if (analysisResult.tasks?.length > 0) {
                 for (const task of analysisResult.tasks) {
-                    await base44.entities.Task.create({
+                    createTask({
                         project_id: project.id,
                         title: task.title,
                         description: task.description,
@@ -334,26 +299,15 @@ export default function ProjectAnalysis() {
                 }
             }
 
-            queryClient.invalidateQueries(['project', projectId]);
-            queryClient.invalidateQueries(['tasks', projectId]);
-
         } catch (error) {
             console.error('Analysis error:', error);
-            await base44.entities.Project.update(project.id, {
+            updateProject(project.id, {
                 status: 'error'
             });
         } finally {
             setIsAnalyzing(false);
         }
     };
-
-    if (isLoading) {
-        return (
-            <div className="min-h-screen bg-slate-950 flex items-center justify-center">
-                <Loader2 className="w-8 h-8 text-cyan-400 animate-spin" />
-            </div>
-        );
-    }
 
     if (!project) {
         return (
@@ -391,11 +345,19 @@ export default function ProjectAnalysis() {
                             <h1 className="text-2xl font-bold">{project.name}</h1>
                             <div className="flex items-center gap-3 mt-2">
                                 <StatusBadge status={project.status} />
-                                {project.detected_stack?.framework && (
-                                    <StackBadge name={project.detected_stack.framework} />
-                                )}
-                                {project.detected_stack?.language && (
-                                    <StackBadge name={project.detected_stack.language} />
+                                {Array.isArray(project.detected_stack) ? (
+                                    project.detected_stack.slice(0, 3).map((tech, i) => (
+                                        <StackBadge key={i} name={tech} />
+                                    ))
+                                ) : (
+                                    <>
+                                        {project.detected_stack?.framework && (
+                                            <StackBadge name={project.detected_stack.framework} />
+                                        )}
+                                        {project.detected_stack?.language && (
+                                            <StackBadge name={project.detected_stack.language} />
+                                        )}
+                                    </>
                                 )}
                             </div>
                         </div>
@@ -616,10 +578,9 @@ export default function ProjectAnalysis() {
                         <p className="text-slate-400 mb-6">
                             Something went wrong while analyzing your project.
                         </p>
-                        <Button 
+                        <Button
                             onClick={() => {
-                                base44.entities.Project.update(project.id, { status: 'analyzing' });
-                                queryClient.invalidateQueries(['project', projectId]);
+                                updateProject(project.id, { status: 'analyzing' });
                             }}
                             className="bg-slate-800 hover:bg-slate-700"
                         >

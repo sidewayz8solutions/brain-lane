@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence, Reorder } from 'framer-motion';
-import { base44 } from '@/api/base44Client';
 import { cn } from '@/lib/utils';
+import { InvokeLLM } from '@/services/aiService';
 import {
     Sparkles,
     GripVertical,
@@ -240,7 +240,7 @@ export default function AIPrioritizedQueue({ tasks, project, onOrderChange, onEx
                 files: t.files_affected?.length || 0
             }));
 
-            const result = await base44.integrations.Core.InvokeLLM({
+            const result = await InvokeLLM({
                 prompt: `You are a senior software architect. Analyze these tasks and prioritize them for optimal execution order.
 
 PROJECT: ${project?.name || 'Unknown'}

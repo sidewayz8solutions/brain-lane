@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { base44 } from '@/api/base44Client';
 import { cn } from '@/lib/utils';
+import { InvokeLLM } from '@/services/aiService';
 import {
     Users,
     Bot,
@@ -246,8 +246,8 @@ export default function AgentCollaboration({ task, project, onSuggestion }) {
             await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 1000));
             
             // Get agent-specific response with skills context
-            const response = await base44.integrations.Core.InvokeLLM({
-                prompt: `You are the ${agent.name}, a specialist in ${agent.specialty}. 
+            const response = await InvokeLLM({
+                prompt: `You are the ${agent.name}, a specialist in ${agent.specialty}.
 Your core skills: ${agent.skills.join(', ')}.
 
 Task: ${task.title}
@@ -295,8 +295,8 @@ Provide a brief (2-3 sentences) expert analysis from your specialty. Be specific
         const primaryAgent = relevantAgents[0];
         
         setAgentStatuses(prev => ({ ...prev, [primaryAgent.id]: 'thinking' }));
-        
-        const response = await base44.integrations.Core.InvokeLLM({
+
+        const response = await InvokeLLM({
             prompt: `You are the ${primaryAgent.name}, a specialist in ${primaryAgent.specialty}.
 Your core skills: ${primaryAgent.skills.join(', ')}.
 
@@ -322,7 +322,7 @@ Provide a helpful, expert response based on your specialty.`,
             
             await new Promise(r => setTimeout(r, 800));
             
-            const secondResponse = await base44.integrations.Core.InvokeLLM({
+            const secondResponse = await InvokeLLM({
                 prompt: `You are the ${secondaryAgent.name}, specialist in ${secondaryAgent.specialty}.
 Skills: ${secondaryAgent.skills.join(', ')}.
 

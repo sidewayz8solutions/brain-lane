@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { base44 } from '@/api/base44Client';
 import { motion } from 'framer-motion';
 import { Sparkles, Zap, GitBranch, CheckCircle, ArrowRight, Brain, Code2, Cpu, Shield, Rocket } from 'lucide-react';
 import FileUploader from '../components/upload/FileUploader';
@@ -8,34 +7,50 @@ import { createPageUrl } from '@/utils';
 import AnimatedBackground from '../components/ui/AnimatedBackground';
 import AnimatedCard from '../components/ui/AnimatedCard';
 import { GradientText, WordReveal } from '../components/ui/AnimatedText';
+import { useProjectStore } from '@/store/projectStore';
+import { UploadFile, ExtractZipContents, AnalyzeProjectStructure } from '@/api/integrations';
 
 export default function Home() {
     const navigate = useNavigate();
     const [isUploading, setIsUploading] = useState(false);
+    const createProject = useProjectStore((state) => state.createProject);
 
     const handleUpload = async (data) => {
         setIsUploading(true);
-        
+
         try {
             let fileUrl = null;
-            
+            let fileTree = [];
+            let fileContents = {};
+            let detectedStack = [];
+
             if (data.type === 'zip' && data.file) {
-                const uploadResult = await base44.integrations.Core.UploadFile({ file: data.file });
+                // Upload and extract zip file
+                const uploadResult = await UploadFile({ file: data.file });
                 fileUrl = uploadResult.file_url;
+
+                // Extract and analyze contents
+                const extracted = await ExtractZipContents(data.file);
+                fileTree = extracted.fileTree;
+                fileContents = extracted.fileContents;
+
+                const analysis = AnalyzeProjectStructure(fileTree, fileContents);
+                detectedStack = analysis.detected_stack;
             }
 
-            const project = await base44.entities.Project.create({
+            const project = createProject({
                 name: data.file?.name?.replace('.zip', '') || data.url?.split('/').pop() || 'Imported Project',
                 source_type: data.type,
                 github_url: data.type === 'github' ? data.url : null,
                 zip_file_url: fileUrl,
                 status: 'analyzing',
-                file_tree: [],
-                file_contents: {}
+                file_tree: fileTree,
+                file_contents: fileContents,
+                detected_stack: detectedStack
             });
 
             navigate(createPageUrl('ProjectAnalysis') + `?id=${project.id}`);
-            
+
         } catch (error) {
             console.error('Upload error:', error);
             setIsUploading(false);

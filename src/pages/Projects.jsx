@@ -1,13 +1,11 @@
 import React from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { motion } from 'framer-motion';
-import { 
-    Plus, 
-    FolderGit2, 
-    Clock, 
+import {
+    Plus,
+    FolderGit2,
+    Clock,
     ArrowRight,
     Trash2
 } from 'lucide-react';
@@ -26,24 +24,25 @@ import {
     AlertDialogTitle,
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { useQueryClient } from '@tanstack/react-query';
+import { useProjectStore, useTaskStore } from '@/store/projectStore';
 
 export default function Projects() {
-    const queryClient = useQueryClient();
-    
-    const { data: projects = [], isLoading } = useQuery({
-        queryKey: ['projects'],
-        queryFn: () => base44.entities.Project.list('-created_date')
-    });
+    const projects = useProjectStore((state) => state.projects);
+    const deleteProjectStore = useProjectStore((state) => state.deleteProject);
+    const tasks = useTaskStore((state) => state.tasks);
+    const deleteTask = useTaskStore((state) => state.deleteTask);
 
-    const deleteProject = async (projectId) => {
-        await base44.entities.Project.delete(projectId);
-        // Also delete related tasks
-        const tasks = await base44.entities.Task.filter({ project_id: projectId });
-        for (const task of tasks) {
-            await base44.entities.Task.delete(task.id);
-        }
-        queryClient.invalidateQueries(['projects']);
+    // Sort by created_at descending
+    const sortedProjects = [...projects].sort((a, b) =>
+        new Date(b.created_at) - new Date(a.created_at)
+    );
+
+    const deleteProject = (projectId) => {
+        // Delete related tasks first
+        const projectTasks = tasks.filter(t => t.project_id === projectId);
+        projectTasks.forEach(task => deleteTask(task.id));
+        // Then delete the project
+        deleteProjectStore(projectId);
     };
 
     return (
@@ -72,13 +71,7 @@ export default function Projects() {
                 </div>
 
                 {/* Projects Grid */}
-                {isLoading ? (
-                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                        {[1, 2, 3].map(i => (
-                            <div key={i} className="h-48 bg-slate-800/50 rounded-2xl animate-pulse" />
-                        ))}
-                    </div>
-                ) : projects.length === 0 ? (
+                {sortedProjects.length === 0 ? (
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -100,14 +93,14 @@ export default function Projects() {
                     </motion.div>
                 ) : (
                     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                        {projects.map((project, idx) => (
+                        {sortedProjects.map((project, idx) => (
                             <motion.div
                                 key={project.id}
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: idx * 0.05 }}
                             >
-                                <Link 
+                                <Link
                                     to={createPageUrl('ProjectAnalysis') + `?id=${project.id}`}
                                     className="block"
                                 >
@@ -130,18 +123,26 @@ export default function Projects() {
                                         )}
 
                                         <div className="flex flex-wrap gap-2 mb-4">
-                                            {project.detected_stack?.framework && (
-                                                <StackBadge name={project.detected_stack.framework} size="sm" />
-                                            )}
-                                            {project.detected_stack?.language && (
-                                                <StackBadge name={project.detected_stack.language} size="sm" />
+                                            {Array.isArray(project.detected_stack) ? (
+                                                project.detected_stack.slice(0, 2).map((tech, i) => (
+                                                    <StackBadge key={i} name={tech} size="sm" />
+                                                ))
+                                            ) : (
+                                                <>
+                                                    {project.detected_stack?.framework && (
+                                                        <StackBadge name={project.detected_stack.framework} size="sm" />
+                                                    )}
+                                                    {project.detected_stack?.language && (
+                                                        <StackBadge name={project.detected_stack.language} size="sm" />
+                                                    )}
+                                                </>
                                             )}
                                         </div>
 
                                         <div className="flex items-center justify-between pt-4 border-t border-slate-800">
                                             <span className="text-xs text-slate-500 flex items-center gap-1">
                                                 <Clock className="w-3 h-3" />
-                                                {format(new Date(project.created_date), 'MMM d, yyyy')}
+                                                {format(new Date(project.created_at), 'MMM d, yyyy')}
                                             </span>
                                             <ArrowRight className="w-4 h-4 text-slate-500 group-hover:text-cyan-400 group-hover:translate-x-1 transition-all" />
                                         </div>

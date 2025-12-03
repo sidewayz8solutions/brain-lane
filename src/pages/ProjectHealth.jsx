@@ -1,7 +1,6 @@
 import React, { useState, useMemo } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
 import { motion } from 'framer-motion';
+import { useProjectStore, useTaskStore } from '@/store/projectStore';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import {
@@ -218,17 +217,12 @@ export default function ProjectHealth() {
     const projectId = urlParams.get('id');
     const [timeRange, setTimeRange] = useState('7d');
 
-    const { data: project, isLoading: projectLoading } = useQuery({
-        queryKey: ['project', projectId],
-        queryFn: () => base44.entities.Project.filter({ id: projectId }).then(res => res[0]),
-        enabled: !!projectId
-    });
+    // Use Zustand stores
+    const getProject = useProjectStore((state) => state.getProject);
+    const project = getProject(projectId);
 
-    const { data: tasks = [] } = useQuery({
-        queryKey: ['tasks', projectId],
-        queryFn: () => base44.entities.Task.filter({ project_id: projectId }),
-        enabled: !!projectId
-    });
+    const tasksStore = useTaskStore((state) => state.tasks);
+    const tasks = tasksStore.filter(t => t.project_id === projectId);
 
     // Generate mock health data based on project
     const healthData = useMemo(() => {
@@ -316,14 +310,6 @@ export default function ProjectHealth() {
             recentVulnerabilities: (project?.security_vulnerabilities || []).slice(0, 5)
         };
     }, [tasks, project]);
-
-    if (projectLoading) {
-        return (
-            <div className="min-h-screen bg-slate-950 flex items-center justify-center">
-                <Loader2 className="w-8 h-8 text-cyan-400 animate-spin" />
-            </div>
-        );
-    }
 
     return (
         <div className="min-h-screen bg-slate-950 text-white">
