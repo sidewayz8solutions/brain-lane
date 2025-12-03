@@ -1,9 +1,10 @@
-import React from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { cn } from "@/lib/utils";
+import PropTypes from 'prop-types';
 
 // Animated text that reveals character by character
-export function TypewriterText({ text, className, delay = 0 }) {
+function TypewriterText({ text, className, delay = 0 }) {
     const characters = text.split('');
     
     return (
@@ -26,8 +27,14 @@ export function TypewriterText({ text, className, delay = 0 }) {
     );
 }
 
+TypewriterText.propTypes = {
+    text: PropTypes.string.isRequired,
+    className: PropTypes.string,
+    delay: PropTypes.number,
+};
+
 // Animated gradient text
-export function GradientText({ children, className, colors = ['from-blue-400', 'to-cyan-400'] }) {
+function GradientText({ children, className, colors = ['from-blue-400', 'to-cyan-400'] }) {
     return (
         <motion.span
             className={cn(
@@ -45,8 +52,14 @@ export function GradientText({ children, className, colors = ['from-blue-400', '
     );
 }
 
+GradientText.propTypes = {
+    children: PropTypes.node,
+    className: PropTypes.string,
+    colors: PropTypes.arrayOf(PropTypes.string),
+};
+
 // Text that animates word by word
-export function WordReveal({ text, className, delay = 0, staggerDelay = 0.1 }) {
+function WordReveal({ text, className, delay = 0, staggerDelay = 0.1 }) {
     const words = text.split(' ');
     
     return (
@@ -70,8 +83,15 @@ export function WordReveal({ text, className, delay = 0, staggerDelay = 0.1 }) {
     );
 }
 
+WordReveal.propTypes = {
+    text: PropTypes.string.isRequired,
+    className: PropTypes.string,
+    delay: PropTypes.number,
+    staggerDelay: PropTypes.number,
+};
+
 // Glowing text effect
-export function GlowText({ children, className, glowColor = 'cyan' }) {
+function GlowText({ children, className, glowColor = 'cyan' }) {
     const glowColors = {
         cyan: 'drop-shadow-[0_0_10px_rgba(6,182,212,0.5)] drop-shadow-[0_0_20px_rgba(6,182,212,0.3)]',
         blue: 'drop-shadow-[0_0_10px_rgba(59,130,246,0.5)] drop-shadow-[0_0_20px_rgba(59,130,246,0.3)]',
@@ -95,8 +115,14 @@ export function GlowText({ children, className, glowColor = 'cyan' }) {
     );
 }
 
+GlowText.propTypes = {
+    children: PropTypes.node,
+    className: PropTypes.string,
+    glowColor: PropTypes.oneOf(['cyan', 'blue', 'purple']),
+};
+
 // Counter animation
-export function AnimatedCounter({ value, duration = 2, className }) {
+function AnimatedCounter({ value, duration = 2, className }) {
     return (
         <motion.span
             className={className}
@@ -114,15 +140,21 @@ export function AnimatedCounter({ value, duration = 2, className }) {
     );
 }
 
+AnimatedCounter.propTypes = {
+    value: PropTypes.number.isRequired,
+    duration: PropTypes.number,
+    className: PropTypes.string,
+};
+
 // Scramble text effect
-export function ScrambleText({ text, className }) {
+function ScrambleText({ text, className }) {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-    const [displayText, setDisplayText] = React.useState(text);
+    const [displayText, setDisplayText] = useState(text);
     
-    React.useEffect(() => {
+    useEffect(() => {
         let iteration = 0;
         const interval = setInterval(() => {
-            setDisplayText(prev => 
+            setDisplayText(
                 text.split('').map((char, index) => {
                     if (index < iteration) return text[index];
                     return chars[Math.floor(Math.random() * chars.length)];
@@ -138,3 +170,10 @@ export function ScrambleText({ text, className }) {
     
     return <span className={cn("font-mono", className)}>{displayText}</span>;
 }
+
+ScrambleText.propTypes = {
+    text: PropTypes.string.isRequired,
+    className: PropTypes.string,
+};
+
+export { TypewriterText, GradientText, WordReveal, GlowText, AnimatedCounter, ScrambleText };

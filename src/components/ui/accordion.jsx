@@ -1,6 +1,7 @@
 import * as React from "react"
 import * as AccordionPrimitive from "@radix-ui/react-accordion"
 import { ChevronDown } from "lucide-react"
+import PropTypes from "prop-types"
 
 import { cn } from "@/lib/utils"
 
@@ -10,6 +11,9 @@ const AccordionItem = React.forwardRef(({ className, ...props }, ref) => (
   <AccordionPrimitive.Item ref={ref} className={cn("border-b", className)} {...props} />
 ))
 AccordionItem.displayName = "AccordionItem"
+AccordionItem.propTypes = {
+  className: PropTypes.string,
+}
 
 const AccordionTrigger = React.forwardRef(({ className, children, ...props }, ref) => (
   <AccordionPrimitive.Header className="flex">
@@ -27,6 +31,10 @@ const AccordionTrigger = React.forwardRef(({ className, children, ...props }, re
   </AccordionPrimitive.Header>
 ))
 AccordionTrigger.displayName = AccordionPrimitive.Trigger.displayName
+AccordionTrigger.propTypes = {
+  className: PropTypes.string,
+  children: PropTypes.node,
+}
 
 const AccordionContent = React.forwardRef(({ className, children, ...props }, ref) => (
   <AccordionPrimitive.Content
@@ -37,5 +45,9 @@ const AccordionContent = React.forwardRef(({ className, children, ...props }, re
   </AccordionPrimitive.Content>
 ))
 AccordionContent.displayName = AccordionPrimitive.Content.displayName
+AccordionContent.propTypes = {
+  className: PropTypes.string,
+  children: PropTypes.node,
+}
 
 export { Accordion, AccordionItem, AccordionTrigger, AccordionContent }

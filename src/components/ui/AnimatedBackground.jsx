@@ -1,7 +1,7 @@
-import React, { useEffect, useRef } from 'react';
+import { useRef } from 'react';
 import { motion } from 'framer-motion';
 
-export default function AnimatedBackground({ variant = 'default' }) {
+export default function AnimatedBackground() {
     const containerRef = useRef(null);
 
     // Floating orbs configuration

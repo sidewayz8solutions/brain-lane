@@ -1,8 +1,9 @@
-import React, { useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import { cn } from "@/lib/utils";
+import PropTypes from 'prop-types';
 
-export default function AnimatedCard({ 
+function AnimatedCard({ 
     children, 
     className,
     glowColor = 'cyan',
@@ -112,3 +113,14 @@ export default function AnimatedCard({
         </motion.div>
     );
 }
+
+AnimatedCard.propTypes = {
+    children: PropTypes.node,
+    className: PropTypes.string,
+    glowColor: PropTypes.oneOf(['cyan', 'blue', 'purple', 'green']),
+    enableTilt: PropTypes.bool,
+    enableGlow: PropTypes.bool,
+    enableShine: PropTypes.bool,
+};
+
+export default AnimatedCard;
