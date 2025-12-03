@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Sparkles, Zap, GitBranch, CheckCircle, Brain, Code2, Cpu, Shield, Rocket, Star } from 'lucide-react';
+import { Sparkles, Zap, GitBranch, CheckCircle, Brain, Code2, Cpu, Shield, Rocket, Star, AlertCircle } from 'lucide-react';
 import FileUploader from '../components/upload/FileUploader';
 import FloatingParticles from '../components/ui/FloatingParticles';
 import { createPageUrl } from '@/utils';
@@ -11,10 +11,12 @@ import { UploadFile, ExtractZipContents, AnalyzeProjectStructure } from '@/api/i
 export default function Home() {
     const navigate = useNavigate();
     const [isUploading, setIsUploading] = useState(false);
+    const [uploadError, setUploadError] = useState(null);
     const createProject = useProjectStore((state) => state.createProject);
 
     const handleUpload = async (data) => {
         setIsUploading(true);
+        setUploadError(null);
 
         try {
             let fileUrl = null;
@@ -29,11 +31,16 @@ export default function Home() {
 
                 // Extract and analyze contents
                 const extracted = await ExtractZipContents(data.file);
-                fileTree = extracted.fileTree;
-                fileContents = extracted.fileContents;
+                fileTree = extracted.fileTree || [];
+                fileContents = extracted.fileContents || {};
 
                 const analysis = AnalyzeProjectStructure(fileTree, fileContents);
-                detectedStack = analysis.detected_stack;
+                detectedStack = analysis.detected_stack || [];
+            } else if (data.type === 'github' && data.url) {
+                // GitHub URL import - create project with URL for later processing
+                fileTree = [];
+                fileContents = {};
+                detectedStack = [];
             }
 
             const project = createProject({
@@ -47,10 +54,12 @@ export default function Home() {
                 detected_stack: detectedStack
             });
 
+            // Navigate to analysis page
             navigate(createPageUrl('ProjectAnalysis') + `?id=${project.id}`);
 
         } catch (error) {
             console.error('Upload error:', error);
+            setUploadError(error.message || 'Failed to process file. Please try again.');
             setIsUploading(false);
         }
     };
@@ -301,6 +310,18 @@ export default function Home() {
                                     </motion.div>
                                     <span className="text-gray-300 font-medium">Start Your Analysis</span>
                                 </motion.div>
+
+                                {/* Error Message */}
+                                {uploadError && (
+                                    <motion.div
+                                        initial={{ opacity: 0, y: -10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        className="mb-4 p-3 rounded-xl bg-red-500/10 border border-red-500/30 flex items-center gap-2 text-red-400 text-sm"
+                                    >
+                                        <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                                        {uploadError}
+                                    </motion.div>
+                                )}
 
                                 <FileUploader onUpload={handleUpload} isUploading={isUploading} />
                             </div>

@@ -47,20 +47,12 @@ function PagesContent() {
     return (
         <Layout currentPageName={currentPage}>
             <Routes>            
-                
-                    <Route path="/" element={<Home />} />
-                
-                
-                <Route path="/Home" element={<Home />} />
-                
-                <Route path="/ProjectAnalysis" element={<ProjectAnalysis />} />
-                
-                <Route path="/TaskView" element={<TaskView />} />
-                
-                <Route path="/Projects" element={<Projects />} />
-                
-                <Route path="/ProjectHealth" element={<ProjectHealth />} />
-                
+                <Route path="/" element={<Home />} />
+                <Route path="/home" element={<Home />} />
+                <Route path="/projectanalysis" element={<ProjectAnalysis />} />
+                <Route path="/taskview" element={<TaskView />} />
+                <Route path="/projects" element={<Projects />} />
+                <Route path="/projecthealth" element={<ProjectHealth />} />
             </Routes>
         </Layout>
     );
