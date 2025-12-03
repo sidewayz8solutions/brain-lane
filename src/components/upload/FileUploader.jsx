@@ -148,15 +148,15 @@ export default function FileUploader({ onUpload, isUploading }) {
 
     return (
         <div className="w-full max-w-2xl mx-auto">
-            {/* Mode Toggle - LSU Purple & Gold Theme */}
-            <div className="flex gap-2 mb-6 p-1.5 bg-[#2D1250]/60 rounded-2xl backdrop-blur-sm border border-[#461D7C]/30">
+            {/* Mode Toggle - Vibrant Multi-color Theme */}
+            <div className="flex gap-2 mb-6 p-1.5 bg-slate-900/60 rounded-2xl backdrop-blur-sm border border-slate-700/30">
                 {['zip', 'github'].map((mode) => (
                     <motion.button
                         key={mode}
                         onClick={() => { setUploadMode(mode); clearSelection(); }}
                         className={cn(
                             "relative flex-1 flex items-center justify-center gap-2 py-3.5 px-4 rounded-xl text-sm font-medium transition-colors",
-                            uploadMode === mode ? "text-[#FFE566]" : "text-[#FFE566]/50 hover:text-[#FFE566]/80"
+                            uploadMode === mode ? "text-white" : "text-slate-400 hover:text-white"
                         )}
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
@@ -164,7 +164,7 @@ export default function FileUploader({ onUpload, isUploading }) {
                         {uploadMode === mode && (
                             <motion.div
                                 layoutId="activeTab"
-                                className="absolute inset-0 bg-gradient-to-r from-[#461D7C] to-[#FFE566] rounded-xl"
+                                className="absolute inset-0 bg-gradient-to-r from-cyan-500 via-purple-500 to-green-500 rounded-xl"
                                 initial={false}
                                 transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
                             />
@@ -210,7 +210,7 @@ export default function FileUploader({ onUpload, isUploading }) {
                         exit={{ opacity: 0, y: -20, scale: 0.95 }}
                         transition={{ duration: 0.3, ease: [0.25, 0.46, 0.45, 0.94] }}
                     >
-                        {/* Drop Zone - LSU Purple & Gold Theme */}
+                        {/* Drop Zone - Vibrant Multi-color Theme */}
                         <motion.div
                             ref={dropZoneRef}
                             onDragEnter={handleDrag}
@@ -222,19 +222,19 @@ export default function FileUploader({ onUpload, isUploading }) {
                             className={cn(
                                 "relative border-2 border-dashed rounded-2xl p-12 text-center cursor-pointer transition-all duration-300 overflow-hidden",
                                 dragActive
-                                    ? "border-[#FFE566] bg-[#FFE566]/10"
+                                    ? "border-cyan-400 bg-cyan-500/10"
                                     : selectedFile
-                                        ? "border-[#FFE566]/50 bg-[#FFE566]/5"
-                                        : "border-[#461D7C]/50 hover:border-[#FFE566]/50 bg-[#2D1250]/50",
+                                        ? "border-green-400/50 bg-green-500/5"
+                                        : "border-slate-700/50 hover:border-cyan-500/50 bg-slate-900/50",
                                 isUploading && "pointer-events-none"
                             )}
                             whileHover={{ scale: selectedFile ? 1 : 1.01 }}
                             animate={{
                                 boxShadow: dragActive
-                                    ? '0 0 30px rgba(255, 229, 102, 0.3)'
+                                    ? '0 0 30px rgba(6, 182, 212, 0.3)'
                                     : selectedFile
-                                        ? '0 0 30px rgba(255, 229, 102, 0.2)'
-                                        : ['0 0 0px rgba(0, 0, 0, 0)', '0 0 20px rgba(70, 29, 124, 0.3)', '0 0 0px rgba(0, 0, 0, 0)']
+                                        ? '0 0 30px rgba(34, 197, 94, 0.2)'
+                                        : ['0 0 0px rgba(0, 0, 0, 0)', '0 0 20px rgba(168, 85, 247, 0.3)', '0 0 0px rgba(0, 0, 0, 0)']
                             }}
                             transition={{
                                 boxShadow: {
@@ -244,12 +244,12 @@ export default function FileUploader({ onUpload, isUploading }) {
                                 }
                             }}
                         >
-                            {/* Dynamic glow effect - LSU Purple */}
+                            {/* Dynamic glow effect - Vibrant */}
                             {!selectedFile && (
                                 <motion.div
                                     className="absolute inset-0 pointer-events-none"
                                     style={{
-                                        background: `radial-gradient(circle at ${glowX.get()}% ${glowY.get()}%, rgba(70, 29, 124, 0.25), transparent 50%)`,
+                                        background: `radial-gradient(circle at ${glowX.get()}% ${glowY.get()}%, rgba(6, 182, 212, 0.25), transparent 50%)`,
                                     }}
                                 />
                             )}

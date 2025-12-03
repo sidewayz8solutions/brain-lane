@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Sparkles, Zap, GitBranch, CheckCircle, Brain, Code2, Cpu, Shield, Rocket, Star, AlertCircle } from 'lucide-react';
+import { Sparkles, Zap, GitBranch, CheckCircle, Brain, Code2, Cpu, Shield, Rocket, Star, AlertCircle, Activity, TrendingUp, Clock, Target } from 'lucide-react';
 import FileUploader from '../components/upload/FileUploader';
 import FloatingParticles from '../components/ui/FloatingParticles';
 import { createPageUrl } from '@/utils';
@@ -79,11 +79,39 @@ export default function Home() {
     };
 
     const features = [
-        { icon: Brain, title: 'AI Code Analysis', desc: 'Detects your stack and finds issues automatically' },
-        { icon: Zap, title: 'Smart Task Generation', desc: 'Creates actionable tasks to complete your project' },
-        { icon: GitBranch, title: 'Clean Diffs', desc: 'Review and approve changes like pull requests' },
-        { icon: CheckCircle, title: 'One-Click Apply', desc: 'Download patches or export modified code' },
+        { icon: Brain, title: 'AI Code Analysis', desc: 'Detects your stack and finds issues automatically', color: 'cyan' },
+        { icon: Zap, title: 'Smart Task Generation', desc: 'Creates actionable tasks to complete your project', color: 'purple' },
+        { icon: GitBranch, title: 'Clean Diffs', desc: 'Review and approve changes like pull requests', color: 'green' },
+        { icon: CheckCircle, title: 'One-Click Apply', desc: 'Download patches or export modified code', color: 'orange' },
     ];
+
+    // Vibrant color classes matching ProjectHealth dashboard
+    const colorClasses = {
+        cyan: {
+            bg: 'from-cyan-500/20 to-cyan-500/5',
+            border: 'border-cyan-500/30 hover:border-cyan-400/60',
+            icon: 'text-cyan-400',
+            glow: 'group-hover:shadow-cyan-500/20'
+        },
+        purple: {
+            bg: 'from-purple-500/20 to-purple-500/5',
+            border: 'border-purple-500/30 hover:border-purple-400/60',
+            icon: 'text-purple-400',
+            glow: 'group-hover:shadow-purple-500/20'
+        },
+        green: {
+            bg: 'from-green-500/20 to-green-500/5',
+            border: 'border-green-500/30 hover:border-green-400/60',
+            icon: 'text-green-400',
+            glow: 'group-hover:shadow-green-500/20'
+        },
+        orange: {
+            bg: 'from-orange-500/20 to-orange-500/5',
+            border: 'border-orange-500/30 hover:border-orange-400/60',
+            icon: 'text-orange-400',
+            glow: 'group-hover:shadow-orange-500/20'
+        }
+    };
 
     const stats = [
         { value: '500MB', label: 'Max Upload' },
@@ -116,12 +144,12 @@ export default function Home() {
     };
 
     return (
-        <div className="min-h-screen bg-[#1a0f2e] text-white overflow-x-hidden relative">
-            {/* Animated Background - LSU Purple & Gold Theme */}
+        <div className="min-h-screen bg-slate-950 text-white overflow-x-hidden relative">
+            {/* Animated Background - Vibrant Multi-color Theme */}
             <div className="fixed inset-0 overflow-hidden pointer-events-none">
-                {/* Gradient orbs - LSU Colors */}
+                {/* Gradient orbs - Vibrant Colors */}
                 <motion.div
-                    className="absolute top-0 left-1/4 w-[600px] h-[600px] bg-[#461D7C]/30 rounded-full blur-[120px]"
+                    className="absolute top-0 left-1/4 w-[600px] h-[600px] bg-cyan-600/20 rounded-full blur-[120px]"
                     animate={{
                         x: [0, 100, 0],
                         y: [0, 50, 0],
@@ -130,7 +158,7 @@ export default function Home() {
                     transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
                 />
                 <motion.div
-                    className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-[#FFE566]/15 rounded-full blur-[100px]"
+                    className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-purple-600/15 rounded-full blur-[100px]"
                     animate={{
                         x: [0, -80, 0],
                         y: [0, -60, 0],
@@ -139,12 +167,20 @@ export default function Home() {
                     transition={{ duration: 15, repeat: Infinity, ease: "easeInOut" }}
                 />
                 <motion.div
-                    className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] bg-[#461D7C]/20 rounded-full blur-[80px]"
+                    className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] bg-green-600/10 rounded-full blur-[80px]"
                     animate={{ scale: [1, 1.3, 1] }}
                     transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
                 />
-                {/* Grid overlay - LSU Purple */}
-                <div className="absolute inset-0 bg-[linear-gradient(rgba(70,29,124,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(70,29,124,0.05)_1px,transparent_1px)] bg-[size:60px_60px]" />
+                <motion.div
+                    className="absolute bottom-1/4 left-1/4 w-[300px] h-[300px] bg-orange-600/10 rounded-full blur-[80px]"
+                    animate={{ 
+                        x: [0, 50, 0],
+                        scale: [1, 1.2, 1] 
+                    }}
+                    transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
+                />
+                {/* Grid overlay */}
+                <div className="absolute inset-0 bg-[linear-gradient(rgba(6,182,212,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(6,182,212,0.03)_1px,transparent_1px)] bg-[size:60px_60px]" />
                 {/* Floating particles */}
                 <FloatingParticles count={15} />
             </div>
@@ -179,9 +215,9 @@ export default function Home() {
                                     }
                                 }}
                             >
-                                <div className="absolute inset-0 bg-gradient-to-br from-[#461D7C] to-[#FFE566] rounded-2xl blur-xl opacity-60 animate-pulse" />
-                                <div className="relative w-16 h-16 bg-gradient-to-br from-[#461D7C] via-[#6B3FA0] to-[#FFE566] rounded-2xl flex items-center justify-center shadow-2xl shadow-[#461D7C]/30 border border-[#FFE566]/20">
-                                    <Brain className="w-9 h-9 text-[#FFE566]" />
+                                <div className="absolute inset-0 bg-gradient-to-br from-cyan-500 via-purple-500 to-[#FFE566] rounded-2xl blur-xl opacity-60 animate-pulse" />
+                                <div className="relative w-16 h-16 bg-gradient-to-br from-cyan-500 via-purple-500 to-[#FFE566] rounded-2xl flex items-center justify-center shadow-2xl shadow-cyan-500/30 border border-cyan-400/20">
+                                    <Brain className="w-9 h-9 text-white" />
                                 </div>
                             </motion.div>
                             <motion.h1
@@ -198,7 +234,7 @@ export default function Home() {
                         <motion.div variants={itemVariants} className="mb-8">
                             <h2 className="text-5xl md:text-7xl font-bold leading-tight tracking-tight">
                                 <span className="block text-[#FFE566] glow-gold-subtle mb-3">AI That Finishes</span>
-                                <span className="bg-gradient-to-r from-[#461D7C] via-[#6B3FA0] to-[#FFE566] bg-clip-text text-transparent">
+                                <span className="bg-gradient-to-r from-cyan-400 via-purple-400 to-[#FFE566] bg-clip-text text-transparent">
                                     Your Code
                                 </span>
                             </h2>
@@ -207,7 +243,7 @@ export default function Home() {
                         {/* Subheadline */}
                         <motion.p
                             variants={itemVariants}
-                            className="text-lg md:text-xl text-[#FFE566]/60 max-w-2xl mx-auto mb-10 leading-relaxed"
+                            className="text-lg md:text-xl text-slate-400 max-w-2xl mx-auto mb-10 leading-relaxed"
                         >
                             Upload your project. Our AI analyzes it, creates a completion plan,
                             and implements missing features — all reviewable as clean diffs.
@@ -218,70 +254,76 @@ export default function Home() {
                             variants={itemVariants}
                             className="flex items-center justify-center gap-12 mb-14"
                         >
-                            {stats.map((stat, idx) => (
-                                <motion.div
-                                    key={idx}
-                                    className="text-center group relative"
-                                    whileHover={{ scale: 1.1, y: -5 }}
-                                    transition={{ type: "spring", bounce: 0.4 }}
-                                >
-                                    {/* Hover glow effect */}
+                            {stats.map((stat, idx) => {
+                                const statColors = ['text-cyan-400', 'text-green-400', 'text-purple-400'];
+                                return (
                                     <motion.div
-                                        className="absolute inset-0 -m-2 bg-gradient-to-r from-[#461D7C]/0 to-[#FFE566]/0 rounded-xl blur-xl opacity-0 group-hover:from-[#461D7C]/20 group-hover:to-[#FFE566]/20 group-hover:opacity-100 transition-all duration-300"
-                                    />
-                                    <div className="relative">
-                                        <motion.div 
-                                            className="text-3xl md:text-4xl font-bold text-[#FFE566] group-hover:text-[#FFE566] transition-all duration-300"
-                                            initial={{ opacity: 0, scale: 0.5 }}
-                                            animate={{ opacity: 1, scale: 1 }}
-                                            transition={{ delay: 0.4 + idx * 0.1, type: "spring", bounce: 0.6 }}
-                                        >
-                                            {stat.value}
-                                        </motion.div>
-                                        <div className="text-xs text-[#FFE566]/50 uppercase tracking-widest mt-2 font-medium group-hover:text-[#FFE566]/70 transition-colors">
-                                            {stat.label}
+                                        key={idx}
+                                        className="text-center group relative"
+                                        whileHover={{ scale: 1.1, y: -5 }}
+                                        transition={{ type: "spring", bounce: 0.4 }}
+                                    >
+                                        {/* Hover glow effect */}
+                                        <motion.div
+                                            className="absolute inset-0 -m-2 bg-gradient-to-r from-cyan-500/0 to-purple-500/0 rounded-xl blur-xl opacity-0 group-hover:from-cyan-500/20 group-hover:to-purple-500/20 group-hover:opacity-100 transition-all duration-300"
+                                        />
+                                        <div className="relative">
+                                            <motion.div 
+                                                className={`text-3xl md:text-4xl font-bold ${statColors[idx]} transition-all duration-300`}
+                                                initial={{ opacity: 0, scale: 0.5 }}
+                                                animate={{ opacity: 1, scale: 1 }}
+                                                transition={{ delay: 0.4 + idx * 0.1, type: "spring", bounce: 0.6 }}
+                                            >
+                                                {stat.value}
+                                            </motion.div>
+                                            <div className="text-xs text-slate-500 uppercase tracking-widest mt-2 font-medium group-hover:text-slate-400 transition-colors">
+                                                {stat.label}
+                                            </div>
                                         </div>
-                                    </div>
-                                </motion.div>
-                            ))}
+                                    </motion.div>
+                                );
+                            })}
                         </motion.div>
 
-                        {/* Features Grid - Glassmorphism Cards */}
+                        {/* Features Grid - Vibrant Glassmorphism Cards */}
                         <motion.div
                             variants={containerVariants}
                             className="grid grid-cols-2 md:grid-cols-4 gap-5 max-w-5xl mx-auto mb-20"
                         >
-                            {features.map((feature, idx) => (
-                                <motion.div
-                                    key={idx}
-                                    variants={itemVariants}
-                                    whileHover={{ y: -8, scale: 1.03 }}
-                                    transition={{ type: "spring", bounce: 0.4 }}
-                                    className="group"
-                                >
-                                    <div className="relative h-full p-6 rounded-2xl bg-[#2D1250]/50 backdrop-blur-xl border border-[#461D7C]/50 hover:border-[#FFE566]/30 transition-all duration-300 overflow-hidden">
-                                        {/* Hover glow */}
-                                        <div className="absolute inset-0 bg-gradient-to-br from-[#461D7C]/20 to-[#FFE566]/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                            {features.map((feature, idx) => {
+                                const colors = colorClasses[feature.color];
+                                return (
+                                    <motion.div
+                                        key={idx}
+                                        variants={itemVariants}
+                                        whileHover={{ y: -8, scale: 1.03 }}
+                                        transition={{ type: "spring", bounce: 0.4 }}
+                                        className="group"
+                                    >
+                                        <div className={`relative h-full p-6 rounded-2xl bg-gradient-to-br ${colors.bg} backdrop-blur-xl border ${colors.border} transition-all duration-300 overflow-hidden group-hover:shadow-lg ${colors.glow}`}>
+                                            {/* Animated corner accent */}
+                                            <div className={`absolute top-0 right-0 w-20 h-20 bg-gradient-to-br ${colors.bg} rounded-bl-full opacity-50 group-hover:opacity-100 transition-opacity`} />
 
-                                        <div className="relative z-10">
-                                            <motion.div
-                                                className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#461D7C]/30 to-[#FFE566]/20 flex items-center justify-center mb-4 mx-auto border border-[#461D7C]/30 group-hover:border-[#FFE566]/50 transition-colors"
-                                                initial={{ scale: 0 }}
-                                                animate={{ scale: 1 }}
-                                                transition={{ delay: 0.5 + idx * 0.1, type: "spring", bounce: 0.6 }}
-                                            >
-                                                <feature.icon className="w-6 h-6 text-[#FFE566] group-hover:text-[#FFE566] transition-colors" />
-                                            </motion.div>
-                                            <h3 className="font-semibold text-[#FFE566] mb-2 group-hover:text-[#FFE566] transition-colors glow-gold-subtle">{feature.title}</h3>
-                                            <p className="text-sm text-[#FFE566]/50 leading-relaxed">{feature.desc}</p>
+                                            <div className="relative z-10">
+                                                <motion.div
+                                                    className={`w-12 h-12 rounded-xl bg-gradient-to-br ${colors.bg} flex items-center justify-center mb-4 mx-auto border ${colors.border} transition-all duration-300`}
+                                                    initial={{ scale: 0 }}
+                                                    animate={{ scale: 1 }}
+                                                    transition={{ delay: 0.5 + idx * 0.1, type: "spring", bounce: 0.6 }}
+                                                >
+                                                    <feature.icon className={`w-6 h-6 ${colors.icon}`} />
+                                                </motion.div>
+                                                <h3 className={`font-semibold ${colors.icon} mb-2 transition-colors`}>{feature.title}</h3>
+                                                <p className="text-sm text-slate-400 leading-relaxed">{feature.desc}</p>
+                                            </div>
                                         </div>
-                                    </div>
-                                </motion.div>
-                            ))}
+                                    </motion.div>
+                                );
+                            })}
                         </motion.div>
                     </motion.div>
 
-                    {/* Upload Section - LSU Purple & Gold */}
+                    {/* Upload Section - Vibrant Multi-color */}
                     <motion.div
                         initial={{ opacity: 0, y: 40, scale: 0.95 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -289,9 +331,9 @@ export default function Home() {
                         className="max-w-2xl mx-auto"
                     >
                         <div className="relative">
-                            {/* Glow effect behind card - LSU Purple & Gold */}
+                            {/* Glow effect behind card - Vibrant gradient */}
                             <motion.div 
-                                className="absolute -inset-2 bg-gradient-to-r from-[#461D7C]/40 via-[#6B3FA0]/30 to-[#FFE566]/30 rounded-[2rem] blur-2xl"
+                                className="absolute -inset-2 bg-gradient-to-r from-cyan-500/30 via-purple-500/30 to-green-500/30 rounded-[2rem] blur-2xl"
                                 animate={{
                                     opacity: [0.3, 0.5, 0.3],
                                 }}
@@ -302,7 +344,7 @@ export default function Home() {
                                 }}
                             />
 
-                            <div className="relative bg-[#2D1250]/80 backdrop-blur-2xl rounded-3xl border border-[#461D7C]/50 p-8 shadow-2xl">
+                            <div className="relative bg-slate-900/80 backdrop-blur-2xl rounded-3xl border border-cyan-500/30 p-8 shadow-2xl">
                                 <motion.div
                                     className="flex items-center gap-2 justify-center mb-6"
                                     initial={{ opacity: 0 }}
@@ -350,7 +392,7 @@ export default function Home() {
                         className="mt-28 text-center"
                     >
                         <motion.h3
-                            className="text-sm font-semibold text-purple-400/80 uppercase tracking-[0.2em] mb-12"
+                            className="text-sm font-semibold text-cyan-400/80 uppercase tracking-[0.2em] mb-12"
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 1 }}
@@ -360,44 +402,57 @@ export default function Home() {
 
                         <div className="flex items-center justify-center gap-6 md:gap-10 flex-wrap max-w-5xl mx-auto">
                             {[
-                                { step: 'Upload Project', icon: Rocket, num: '01' },
-                                { step: 'AI Analyzes', icon: Cpu, num: '02' },
-                                { step: 'Review Tasks', icon: Code2, num: '03' },
-                                { step: 'Apply Changes', icon: Shield, num: '04' },
-                            ].map((item, idx) => (
-                                <React.Fragment key={idx}>
-                                    <motion.div
-                                        className="flex flex-col items-center gap-4 group"
-                                        initial={{ opacity: 0, y: 20 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        transition={{ delay: 1.1 + idx * 0.1 }}
-                                        whileHover={{ scale: 1.05 }}
-                                    >
+                                { step: 'Upload Project', icon: Rocket, num: '01', color: 'cyan' },
+                                { step: 'AI Analyzes', icon: Cpu, num: '02', color: 'purple' },
+                                { step: 'Review Tasks', icon: Code2, num: '03', color: 'green' },
+                                { step: 'Apply Changes', icon: Shield, num: '04', color: 'orange' },
+                            ].map((item, idx) => {
+                                const stepColors = {
+                                    cyan: { icon: 'text-cyan-400', border: 'border-cyan-500/50', bg: 'from-cyan-500/30 to-cyan-500/10', num: 'text-cyan-400' },
+                                    purple: { icon: 'text-purple-400', border: 'border-purple-500/50', bg: 'from-purple-500/30 to-purple-500/10', num: 'text-purple-400' },
+                                    green: { icon: 'text-green-400', border: 'border-green-500/50', bg: 'from-green-500/30 to-green-500/10', num: 'text-green-400' },
+                                    orange: { icon: 'text-orange-400', border: 'border-orange-500/50', bg: 'from-orange-500/30 to-orange-500/10', num: 'text-orange-400' }
+                                };
+                                const colors = stepColors[item.color];
+                                return (
+                                    <React.Fragment key={idx}>
                                         <motion.div
-                                            className="relative"
-                                            whileHover={{ rotate: 360 }}
-                                            transition={{ duration: 0.6 }}
+                                            className="flex flex-col items-center gap-4 group"
+                                            initial={{ opacity: 0, y: 20 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            transition={{ delay: 1.1 + idx * 0.1 }}
+                                            whileHover={{ scale: 1.05 }}
                                         >
-                                            <div className="absolute inset-0 bg-gradient-to-br from-purple-500/30 to-amber-400/30 rounded-2xl blur-lg opacity-0 group-hover:opacity-100 transition-opacity" />
-                                            <div className="relative w-16 h-16 rounded-2xl bg-gray-900 border border-gray-800 group-hover:border-purple-500/50 flex items-center justify-center transition-all duration-300">
-                                                <item.icon className="w-7 h-7 text-purple-400 group-hover:text-amber-400 transition-colors" />
-                                            </div>
-                                            <span className="absolute -top-2 -right-2 text-xs font-bold text-amber-400/60 bg-gray-900 px-2 py-0.5 rounded-full border border-gray-800">{item.num}</span>
+                                            <motion.div
+                                                className="relative"
+                                                whileHover={{ rotate: 360 }}
+                                                transition={{ duration: 0.6 }}
+                                            >
+                                                <div className={`absolute inset-0 bg-gradient-to-br ${colors.bg} rounded-2xl blur-lg opacity-0 group-hover:opacity-100 transition-opacity`} />
+                                                <div className={`relative w-16 h-16 rounded-2xl bg-slate-900 border ${colors.border} flex items-center justify-center transition-all duration-300`}>
+                                                    <item.icon className={`w-7 h-7 ${colors.icon} transition-colors`} />
+                                                </div>
+                                                <span className={`absolute -top-2 -right-2 text-xs font-bold ${colors.num} bg-slate-900 px-2 py-0.5 rounded-full border border-slate-800`}>{item.num}</span>
+                                            </motion.div>
+                                            <span className="text-slate-400 text-sm font-medium group-hover:text-white transition-colors">{item.step}</span>
                                         </motion.div>
-                                        <span className="text-gray-400 text-sm font-medium group-hover:text-white transition-colors">{item.step}</span>
-                                    </motion.div>
-                                    {idx < 3 && (
-                                        <motion.div
-                                            initial={{ opacity: 0, scale: 0 }}
-                                            animate={{ opacity: 1, scale: 1 }}
-                                            transition={{ delay: 1.2 + idx * 0.1 }}
-                                            className="hidden md:flex items-center"
-                                        >
-                                            <div className="w-12 h-[2px] bg-gradient-to-r from-purple-500/50 to-amber-400/50" />
-                                        </motion.div>
-                                    )}
-                                </React.Fragment>
-                            ))}
+                                        {idx < 3 && (
+                                            <motion.div
+                                                initial={{ opacity: 0, scale: 0 }}
+                                                animate={{ opacity: 1, scale: 1 }}
+                                                transition={{ delay: 1.2 + idx * 0.1 }}
+                                                className="hidden md:flex items-center"
+                                            >
+                                                <div className={`w-12 h-[2px] bg-gradient-to-r ${
+                                                    idx === 0 ? 'from-cyan-500/50 to-purple-500/50' :
+                                                    idx === 1 ? 'from-purple-500/50 to-green-500/50' :
+                                                    'from-green-500/50 to-orange-500/50'
+                                                }`} />
+                                            </motion.div>
+                                        )}
+                                    </React.Fragment>
+                                );
+                            })}
                         </div>
                     </motion.div>
 
@@ -414,7 +469,7 @@ export default function Home() {
                                     className="text-center space-y-2 group"
                                     whileHover={{ scale: 1.05 }}
                                 >
-                                    <div className="flex items-center justify-center gap-1 text-amber-400">
+                                    <div className="flex items-center justify-center gap-1 text-[#FFE566]">
                                         {[...Array(5)].map((_, i) => (
                                             <motion.div
                                                 key={i}
@@ -426,23 +481,23 @@ export default function Home() {
                                             </motion.div>
                                         ))}
                                     </div>
-                                    <p className="text-gray-400 text-sm">Secure & Private</p>
+                                    <p className="text-slate-400 text-sm">Secure & Private</p>
                                 </motion.div>
 
                                 <motion.div
                                     className="text-center space-y-2 group"
                                     whileHover={{ scale: 1.05 }}
                                 >
-                                    <Shield className="w-8 h-8 text-purple-400 mx-auto group-hover:text-amber-400 transition-colors" />
-                                    <p className="text-gray-400 text-sm">Code Never Stored</p>
+                                    <Shield className="w-8 h-8 text-green-400 mx-auto group-hover:text-green-300 transition-colors" />
+                                    <p className="text-slate-400 text-sm">Code Never Stored</p>
                                 </motion.div>
 
                                 <motion.div
                                     className="text-center space-y-2 group"
                                     whileHover={{ scale: 1.05 }}
                                 >
-                                    <Zap className="w-8 h-8 text-amber-400 mx-auto group-hover:text-purple-400 transition-colors" />
-                                    <p className="text-gray-400 text-sm">Lightning Fast</p>
+                                    <Zap className="w-8 h-8 text-cyan-400 mx-auto group-hover:text-cyan-300 transition-colors" />
+                                    <p className="text-slate-400 text-sm">Lightning Fast</p>
                                 </motion.div>
                             </div>
                         </div>
