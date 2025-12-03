@@ -1,7 +1,7 @@
 import React, { useState, useRef, useCallback } from 'react';
 import { Upload, FileArchive, Github, X, CheckCircle, AlertCircle, Sparkles } from 'lucide-react';
 import { cn } from "@/lib/utils";
-import { motion, AnimatePresence, useMotionValue, useSpring, useTransform } from 'framer-motion';
+import { motion, AnimatePresence, useMotionValue, useSpring } from 'framer-motion';
 import AnimatedButton from '../ui/AnimatedButton';
 import { AnimatedProgress, OrbitalSpinner } from '../ui/LoadingSpinner';
 
@@ -114,6 +114,18 @@ export default function FileUploader({ onUpload, isUploading }) {
             if (cleanUrl.startsWith('http://')) {
                 cleanUrl = cleanUrl.replace('http://', 'https://');
             }
+            
+            // Simulate progress for GitHub cloning
+            let progress = 0;
+            const interval = setInterval(() => {
+                progress += Math.random() * 12;
+                if (progress >= 90) {
+                    clearInterval(interval);
+                    progress = 90;
+                }
+                setUploadProgress(progress);
+            }, 250);
+            
             onUpload({ type: 'github', url: cleanUrl });
         }
     };
@@ -135,15 +147,15 @@ export default function FileUploader({ onUpload, isUploading }) {
 
     return (
         <div className="w-full max-w-2xl mx-auto">
-            {/* Mode Toggle - Enhanced with animations */}
-            <div className="flex gap-2 mb-6 p-1.5 bg-slate-800/50 rounded-2xl backdrop-blur-sm border border-slate-700/50">
+            {/* Mode Toggle - Purple & Gold Theme */}
+            <div className="flex gap-2 mb-6 p-1.5 bg-gray-900/60 rounded-2xl backdrop-blur-sm border border-purple-500/20">
                 {['zip', 'github'].map((mode) => (
                     <motion.button
                         key={mode}
                         onClick={() => { setUploadMode(mode); clearSelection(); }}
                         className={cn(
                             "relative flex-1 flex items-center justify-center gap-2 py-3.5 px-4 rounded-xl text-sm font-medium transition-colors",
-                            uploadMode === mode ? "text-white" : "text-slate-400 hover:text-slate-200"
+                            uploadMode === mode ? "text-white" : "text-gray-400 hover:text-gray-200"
                         )}
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
@@ -151,7 +163,7 @@ export default function FileUploader({ onUpload, isUploading }) {
                         {uploadMode === mode && (
                             <motion.div
                                 layoutId="activeTab"
-                                className="absolute inset-0 bg-gradient-to-r from-blue-600 to-cyan-600 rounded-xl"
+                                className="absolute inset-0 bg-gradient-to-r from-purple-600 to-amber-500 rounded-xl"
                                 initial={false}
                                 transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
                             />
@@ -197,7 +209,7 @@ export default function FileUploader({ onUpload, isUploading }) {
                         exit={{ opacity: 0, y: -20, scale: 0.95 }}
                         transition={{ duration: 0.3, ease: [0.25, 0.46, 0.45, 0.94] }}
                     >
-                        {/* Drop Zone with enhanced effects */}
+                        {/* Drop Zone - Purple & Gold Theme */}
                         <motion.div
                             ref={dropZoneRef}
                             onDragEnter={handleDrag}
@@ -208,28 +220,35 @@ export default function FileUploader({ onUpload, isUploading }) {
                             onClick={() => !isUploading && fileInputRef.current?.click()}
                             className={cn(
                                 "relative border-2 border-dashed rounded-2xl p-12 text-center cursor-pointer transition-all duration-300 overflow-hidden",
-                                dragActive 
-                                    ? "border-cyan-400 bg-cyan-500/10" 
+                                dragActive
+                                    ? "border-purple-400 bg-purple-500/10"
                                     : selectedFile
-                                        ? "border-green-500/50 bg-green-500/5"
-                                        : "border-slate-700 hover:border-slate-500 bg-slate-800/30",
+                                        ? "border-amber-500/50 bg-amber-500/5"
+                                        : "border-purple-500/30 hover:border-purple-400/50 bg-gray-900/50",
                                 isUploading && "pointer-events-none"
                             )}
                             whileHover={{ scale: selectedFile ? 1 : 1.01 }}
                             animate={{
-                                boxShadow: dragActive 
-                                    ? '0 0 30px rgba(6, 182, 212, 0.2)' 
+                                boxShadow: dragActive
+                                    ? '0 0 30px rgba(147, 51, 234, 0.3)'
                                     : selectedFile
-                                        ? '0 0 30px rgba(34, 197, 94, 0.1)'
-                                        : '0 0 0px rgba(0, 0, 0, 0)'
+                                        ? '0 0 30px rgba(245, 158, 11, 0.2)'
+                                        : ['0 0 0px rgba(0, 0, 0, 0)', '0 0 20px rgba(147, 51, 234, 0.15)', '0 0 0px rgba(0, 0, 0, 0)']
+                            }}
+                            transition={{
+                                boxShadow: {
+                                    duration: 3,
+                                    repeat: Infinity,
+                                    ease: "easeInOut"
+                                }
                             }}
                         >
-                            {/* Dynamic glow effect */}
+                            {/* Dynamic glow effect - Purple */}
                             {!selectedFile && (
                                 <motion.div
                                     className="absolute inset-0 pointer-events-none"
                                     style={{
-                                        background: `radial-gradient(circle at ${glowX.get()}% ${glowY.get()}%, rgba(6, 182, 212, 0.1), transparent 50%)`,
+                                        background: `radial-gradient(circle at ${glowX.get()}% ${glowY.get()}%, rgba(147, 51, 234, 0.15), transparent 50%)`,
                                     }}
                                 />
                             )}
@@ -264,24 +283,34 @@ export default function FileUploader({ onUpload, isUploading }) {
                                         initial={{ opacity: 0, scale: 0.9 }}
                                         animate={{ opacity: 1, scale: 1 }}
                                         exit={{ opacity: 0, scale: 0.9 }}
-                                        className="space-y-4"
+                                        className="space-y-5"
                                     >
-                                        <motion.div 
-                                            className="w-20 h-20 mx-auto bg-gradient-to-br from-green-500/20 to-emerald-500/20 rounded-2xl flex items-center justify-center border border-green-500/30"
+                                        <motion.div
+                                            className="relative w-24 h-24 mx-auto bg-gradient-to-br from-amber-500/20 to-purple-500/20 rounded-2xl flex items-center justify-center border border-amber-500/30"
                                             initial={{ rotate: -10 }}
-                                            animate={{ rotate: 0 }}
-                                            transition={{ type: "spring", bounce: 0.5 }}
+                                            animate={{ 
+                                                rotate: 0,
+                                                boxShadow: [
+                                                    '0 0 20px rgba(245, 158, 11, 0.3)',
+                                                    '0 0 30px rgba(245, 158, 11, 0.4)',
+                                                    '0 0 20px rgba(245, 158, 11, 0.3)'
+                                                ]
+                                            }}
+                                            transition={{ 
+                                                rotate: { type: "spring", bounce: 0.5 },
+                                                boxShadow: { duration: 2, repeat: Infinity, ease: "easeInOut" }
+                                            }}
                                         >
                                             <motion.div
                                                 initial={{ scale: 0 }}
                                                 animate={{ scale: 1 }}
                                                 transition={{ delay: 0.2, type: "spring", bounce: 0.6 }}
                                             >
-                                                <CheckCircle className="w-10 h-10 text-green-400" />
+                                                <CheckCircle className="w-12 h-12 text-amber-400" />
                                             </motion.div>
                                         </motion.div>
-                                        <div>
-                                            <motion.p 
+                                        <div className="space-y-2">
+                                            <motion.p
                                                 className="text-white font-medium text-lg"
                                                 initial={{ opacity: 0, y: 10 }}
                                                 animate={{ opacity: 1, y: 0 }}
@@ -289,22 +318,28 @@ export default function FileUploader({ onUpload, isUploading }) {
                                             >
                                                 {selectedFile.name}
                                             </motion.p>
-                                            <motion.p 
-                                                className="text-slate-400 text-sm mt-1"
+                                            <motion.div
+                                                className="flex items-center justify-center gap-3 text-sm"
                                                 initial={{ opacity: 0 }}
                                                 animate={{ opacity: 1 }}
                                                 transition={{ delay: 0.2 }}
                                             >
-                                                {formatFileSize(selectedFile.size)}
-                                            </motion.p>
+                                                <span className="text-amber-400 font-medium">
+                                                    {formatFileSize(selectedFile.size)}
+                                                </span>
+                                                <span className="text-gray-600">•</span>
+                                                <span className="text-gray-400">
+                                                    Ready to analyze
+                                                </span>
+                                            </motion.div>
                                         </div>
                                         <motion.button
                                             onClick={(e) => { e.stopPropagation(); clearSelection(); }}
-                                            className="text-slate-400 hover:text-white text-sm flex items-center gap-1.5 mx-auto px-3 py-1.5 rounded-lg hover:bg-slate-700/50 transition-colors"
+                                            className="text-gray-400 hover:text-white text-sm flex items-center gap-2 mx-auto px-4 py-2 rounded-lg hover:bg-purple-500/20 border border-gray-700/50 hover:border-purple-500/30 transition-colors"
                                             whileHover={{ scale: 1.05 }}
                                             whileTap={{ scale: 0.95 }}
                                         >
-                                            <X className="w-4 h-4" /> Remove
+                                            <X className="w-4 h-4" /> Remove File
                                         </motion.button>
                                     </motion.div>
                                 ) : (
@@ -315,9 +350,9 @@ export default function FileUploader({ onUpload, isUploading }) {
                                         exit={{ opacity: 0, scale: 0.9 }}
                                         className="space-y-4"
                                     >
-                                        <motion.div 
-                                            className="w-20 h-20 mx-auto bg-slate-700/50 rounded-2xl flex items-center justify-center border border-slate-600/50"
-                                            animate={{ 
+                                        <motion.div
+                                            className="w-20 h-20 mx-auto bg-gradient-to-br from-purple-600/20 to-amber-500/20 rounded-2xl flex items-center justify-center border border-purple-500/30"
+                                            animate={{
                                                 y: dragActive ? -5 : 0,
                                                 scale: dragActive ? 1.1 : 1,
                                             }}
@@ -325,34 +360,48 @@ export default function FileUploader({ onUpload, isUploading }) {
                                         >
                                             <Upload className={cn(
                                                 "w-10 h-10 transition-colors",
-                                                dragActive ? "text-cyan-400" : "text-slate-400"
+                                                dragActive ? "text-amber-400" : "text-purple-400"
                                             )} />
                                         </motion.div>
                                         <div>
                                             <p className="text-white font-medium text-lg">
                                                 {dragActive ? 'Drop it here!' : 'Drop your project ZIP here'}
                                             </p>
-                                            <p className="text-slate-400 text-sm mt-2">
-                                                or click to browse • max {MAX_SIZE_MB}MB
+                                            <p className="text-gray-400 text-sm mt-2">
+                                                or click to browse
                                             </p>
+                                            <motion.div
+                                                className="mt-3 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-purple-500/10 border border-purple-500/20"
+                                                initial={{ opacity: 0, scale: 0.9 }}
+                                                animate={{ opacity: 1, scale: 1 }}
+                                                transition={{ delay: 0.3 }}
+                                            >
+                                                <span className="text-purple-300 text-xs font-medium">
+                                                    Max {MAX_SIZE_MB}MB
+                                                </span>
+                                            </motion.div>
                                         </div>
 
-                                        {/* Supported stacks */}
-                                        <div className="flex items-center justify-center gap-2 pt-2 flex-wrap">
-                                            {['React', 'Next.js', 'Python', 'Node.js', 'FastAPI', 'Django'].map((tech, i) => (
-                                                <motion.span
-                                                    key={tech}
-                                                    className="px-2 py-1 text-xs rounded-full bg-slate-700/50 text-slate-400 border border-slate-600/50"
-                                                    initial={{ opacity: 0, scale: 0 }}
-                                                    animate={{ opacity: 1, scale: 1 }}
-                                                    transition={{ delay: 0.3 + i * 0.08 }}
-                                                >
-                                                    {tech}
-                                                </motion.span>
-                                            ))}
+                                        {/* Supported stacks - Purple & Gold */}
+                                        <div className="pt-4">
+                                            <p className="text-gray-500 text-xs mb-3">Supports:</p>
+                                            <div className="flex items-center justify-center gap-2 flex-wrap">
+                                                {['React', 'Next.js', 'Vue', 'Python', 'Node.js', 'FastAPI', 'Django', 'Flask'].map((tech, i) => (
+                                                    <motion.span
+                                                        key={tech}
+                                                        className="px-3 py-1 text-xs rounded-full bg-gradient-to-r from-purple-500/10 to-amber-500/10 text-purple-300 border border-purple-500/20 hover:border-amber-500/30 transition-colors"
+                                                        initial={{ opacity: 0, scale: 0 }}
+                                                        animate={{ opacity: 1, scale: 1 }}
+                                                        transition={{ delay: 0.3 + i * 0.06 }}
+                                                        whileHover={{ scale: 1.05 }}
+                                                    >
+                                                        {tech}
+                                                    </motion.span>
+                                                ))}
+                                            </div>
                                         </div>
-                                        <p className="text-slate-500 text-xs mt-3">
-                                            No node_modules or venv needed
+                                        <p className="text-gray-600 text-xs mt-4">
+                                            💡 Tip: Exclude node_modules & virtual environments
                                         </p>
                                     </motion.div>
                                 )}
@@ -368,57 +417,82 @@ export default function FileUploader({ onUpload, isUploading }) {
                         transition={{ duration: 0.3, ease: [0.25, 0.46, 0.45, 0.94] }}
                         className="space-y-4"
                     >
-                        <div className="relative group">
+                        {isUploading ? (
                             <motion.div
-                                className="absolute -inset-0.5 bg-gradient-to-r from-blue-600 to-cyan-600 rounded-xl opacity-0 group-focus-within:opacity-100 blur transition-opacity"
-                            />
-                            <div className="relative">
-                                <Github className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 z-10" />
-                                <input
-                                    value={githubUrl}
-                                    onChange={(e) => {
-                                        setGithubUrl(e.target.value);
-                                        setError(null);
-                                    }}
-                                    placeholder="https://github.com/username/repository"
-                                    className="w-full pl-12 pr-4 h-14 bg-slate-800/80 border border-slate-700 text-white placeholder:text-slate-500 rounded-xl focus:outline-none focus:border-cyan-500/50 transition-colors"
-                                />
-                            </div>
-                        </div>
-                        
-                        {/* GitHub URL validation feedback */}
-                        {githubUrl && (
-                            <motion.div
-                                initial={{ opacity: 0, y: -10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                className="flex items-center justify-center gap-2"
+                                initial={{ opacity: 0, scale: 0.9 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                className="space-y-6 py-8"
                             >
-                                {isValidGitHubUrl(githubUrl) ? (
-                                    <>
-                                        <CheckCircle className="w-4 h-4 text-green-400" />
-                                        <span className="text-green-400 text-sm">Valid GitHub URL</span>
-                                    </>
-                                ) : (
-                                    <>
-                                        <AlertCircle className="w-4 h-4 text-yellow-400" />
-                                        <span className="text-yellow-400 text-sm">Enter a valid GitHub repo URL</span>
-                                    </>
-                                )}
+                                <OrbitalSpinner size="lg" className="mx-auto" />
+                                <div>
+                                    <p className="text-white font-medium mb-2">Cloning Repository...</p>
+                                    <AnimatedProgress progress={uploadProgress} className="w-48 mx-auto" />
+                                    <p className="text-gray-400 text-sm mt-2">Analyzing code structure</p>
+                                </div>
                             </motion.div>
+                        ) : (
+                            <>
+                                <div className="relative group">
+                                    <motion.div
+                                        className="absolute -inset-0.5 bg-gradient-to-r from-purple-600 to-amber-600 rounded-xl opacity-0 group-focus-within:opacity-100 blur transition-opacity"
+                                    />
+                                    <div className="relative">
+                                        <Github className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 z-10" />
+                                        <input
+                                            value={githubUrl}
+                                            onChange={(e) => {
+                                                setGithubUrl(e.target.value);
+                                                setError(null);
+                                            }}
+                                            placeholder="https://github.com/username/repository"
+                                            className="w-full pl-12 pr-4 h-14 bg-gray-800/80 border border-gray-700 text-white placeholder:text-gray-500 rounded-xl focus:outline-none focus:border-purple-500/50 transition-colors"
+                                            disabled={isUploading}
+                                        />
+                                    </div>
+                                </div>
+                                
+                                {/* GitHub URL validation feedback */}
+                                {githubUrl && (
+                                    <motion.div
+                                        initial={{ opacity: 0, y: -10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        className="flex items-center justify-center gap-2"
+                                    >
+                                        {isValidGitHubUrl(githubUrl) ? (
+                                            <>
+                                                <CheckCircle className="w-4 h-4 text-green-400" />
+                                                <span className="text-green-400 text-sm">Valid GitHub URL</span>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <AlertCircle className="w-4 h-4 text-yellow-400" />
+                                                <span className="text-yellow-400 text-sm">Enter a valid GitHub repo URL</span>
+                                            </>
+                                        )}
+                                    </motion.div>
+                                )}
+                                
+                                <p className="text-gray-500 text-sm text-center">
+                                    Enter the full URL of your public GitHub repository
+                                </p>
+                                
+                                {/* Supported formats hint */}
+                                <div className="bg-gray-800/50 rounded-xl p-4 border border-purple-500/20">
+                                    <p className="text-gray-400 text-xs mb-3 flex items-center gap-2">
+                                        <Sparkles className="w-3 h-3 text-purple-400" />
+                                        Supported formats:
+                                    </p>
+                                    <div className="space-y-1 font-mono text-xs text-gray-500">
+                                        <p className="flex items-center gap-2">
+                                            <span className="text-purple-400">✓</span> https://github.com/user/repo
+                                        </p>
+                                        <p className="flex items-center gap-2">
+                                            <span className="text-purple-400">✓</span> https://github.com/user/repo.git
+                                        </p>
+                                    </div>
+                                </div>
+                            </>
                         )}
-                        
-                        <p className="text-slate-500 text-sm text-center">
-                            Enter the full URL of your public GitHub repository
-                        </p>
-                        
-                        {/* Supported formats hint */}
-                        <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700/50">
-                            <p className="text-slate-400 text-xs mb-2">Supported formats:</p>
-                            <div className="space-y-1 font-mono text-xs text-slate-500">
-                                <p>https://github.com/user/repo</p>
-                                <p>https://github.com/user/repo.git</p>
-                            </div>
-                        </div>
                     </motion.div>
                 )}
             </AnimatePresence>

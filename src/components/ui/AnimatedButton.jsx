@@ -40,9 +40,9 @@ export default function AnimatedButton({
     };
 
     const variants = {
-        primary: "bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white shadow-lg shadow-blue-500/25",
-        secondary: "bg-slate-800 hover:bg-slate-700 text-white border border-slate-700",
-        ghost: "bg-transparent hover:bg-slate-800/50 text-slate-300 hover:text-white",
+        primary: "bg-gradient-to-r from-purple-600 via-violet-600 to-amber-500 hover:from-purple-500 hover:via-violet-500 hover:to-amber-400 text-white shadow-lg shadow-purple-500/30",
+        secondary: "bg-gray-800 hover:bg-gray-700 text-white border border-gray-700",
+        ghost: "bg-transparent hover:bg-gray-800/50 text-gray-300 hover:text-white",
         danger: "bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white shadow-lg shadow-red-500/25",
         success: "bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white shadow-lg shadow-green-500/25",
     };
@@ -104,7 +104,7 @@ export default function AnimatedButton({
                     className="absolute inset-0 rounded-xl opacity-0"
                     whileHover={{ opacity: 1 }}
                     style={{
-                        boxShadow: '0 0 30px rgba(6, 182, 212, 0.4), 0 0 60px rgba(59, 130, 246, 0.2)',
+                        boxShadow: '0 0 30px rgba(147, 51, 234, 0.4), 0 0 60px rgba(245, 158, 11, 0.2)',
                     }}
                 />
             )}

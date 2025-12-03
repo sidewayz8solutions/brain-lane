@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Sparkles, Zap, GitBranch, CheckCircle, ArrowRight, Brain, Code2, Cpu, Shield, Rocket, Star } from 'lucide-react';
+import { Sparkles, Zap, GitBranch, CheckCircle, Brain, Code2, Cpu, Shield, Rocket, Star } from 'lucide-react';
 import FileUploader from '../components/upload/FileUploader';
+import FloatingParticles from '../components/ui/FloatingParticles';
 import { createPageUrl } from '@/utils';
 import { useProjectStore } from '@/store/projectStore';
 import { UploadFile, ExtractZipContents, AnalyzeProjectStructure } from '@/api/integrations';
@@ -121,6 +122,8 @@ export default function Home() {
                 />
                 {/* Grid overlay */}
                 <div className="absolute inset-0 bg-[linear-gradient(rgba(139,92,246,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(139,92,246,0.03)_1px,transparent_1px)] bg-[size:60px_60px]" />
+                {/* Floating particles */}
+                <FloatingParticles count={15} />
             </div>
 
             <div className="relative z-10">
@@ -140,7 +143,18 @@ export default function Home() {
                             <motion.div
                                 className="relative"
                                 whileHover={{ scale: 1.1, rotate: 5 }}
-                                transition={{ type: "spring", bounce: 0.6 }}
+                                animate={{ 
+                                    y: [0, -10, 0],
+                                }}
+                                transition={{ 
+                                    type: "spring", 
+                                    bounce: 0.6,
+                                    y: {
+                                        duration: 3,
+                                        repeat: Infinity,
+                                        ease: "easeInOut"
+                                    }
+                                }}
                             >
                                 <div className="absolute inset-0 bg-gradient-to-br from-purple-500 to-amber-400 rounded-2xl blur-xl opacity-60 animate-pulse" />
                                 <div className="relative w-16 h-16 bg-gradient-to-br from-purple-600 via-violet-600 to-amber-500 rounded-2xl flex items-center justify-center shadow-2xl shadow-purple-500/30 border border-purple-400/20">
@@ -184,14 +198,26 @@ export default function Home() {
                             {stats.map((stat, idx) => (
                                 <motion.div
                                     key={idx}
-                                    className="text-center group"
-                                    whileHover={{ scale: 1.1 }}
+                                    className="text-center group relative"
+                                    whileHover={{ scale: 1.1, y: -5 }}
+                                    transition={{ type: "spring", bounce: 0.4 }}
                                 >
-                                    <div className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-purple-400 to-amber-400 bg-clip-text text-transparent group-hover:from-amber-400 group-hover:to-purple-400 transition-all duration-300">
-                                        {stat.value}
-                                    </div>
-                                    <div className="text-xs text-gray-500 uppercase tracking-widest mt-2 font-medium">
-                                        {stat.label}
+                                    {/* Hover glow effect */}
+                                    <motion.div
+                                        className="absolute inset-0 -m-2 bg-gradient-to-r from-purple-600/0 to-amber-600/0 rounded-xl blur-xl opacity-0 group-hover:from-purple-600/20 group-hover:to-amber-600/20 group-hover:opacity-100 transition-all duration-300"
+                                    />
+                                    <div className="relative">
+                                        <motion.div 
+                                            className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-purple-400 to-amber-400 bg-clip-text text-transparent group-hover:from-amber-400 group-hover:to-purple-400 transition-all duration-300"
+                                            initial={{ opacity: 0, scale: 0.5 }}
+                                            animate={{ opacity: 1, scale: 1 }}
+                                            transition={{ delay: 0.4 + idx * 0.1, type: "spring", bounce: 0.6 }}
+                                        >
+                                            {stat.value}
+                                        </motion.div>
+                                        <div className="text-xs text-gray-500 uppercase tracking-widest mt-2 font-medium group-hover:text-gray-400 transition-colors">
+                                            {stat.label}
+                                        </div>
                                     </div>
                                 </motion.div>
                             ))}
@@ -241,7 +267,17 @@ export default function Home() {
                     >
                         <div className="relative">
                             {/* Glow effect behind card - Purple & Gold */}
-                            <div className="absolute -inset-2 bg-gradient-to-r from-purple-600/30 via-violet-500/20 to-amber-500/30 rounded-[2rem] blur-2xl" />
+                            <motion.div 
+                                className="absolute -inset-2 bg-gradient-to-r from-purple-600/30 via-violet-500/20 to-amber-500/30 rounded-[2rem] blur-2xl"
+                                animate={{
+                                    opacity: [0.3, 0.5, 0.3],
+                                }}
+                                transition={{
+                                    duration: 4,
+                                    repeat: Infinity,
+                                    ease: "easeInOut"
+                                }}
+                            />
 
                             <div className="relative bg-gray-900/80 backdrop-blur-2xl rounded-3xl border border-gray-700/50 p-8 shadow-2xl">
                                 <motion.div
@@ -327,6 +363,53 @@ export default function Home() {
                                     )}
                                 </React.Fragment>
                             ))}
+                        </div>
+                    </motion.div>
+
+                    {/* Trust Badges Section */}
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: 1.3 }}
+                        className="mt-28"
+                    >
+                        <div className="max-w-4xl mx-auto">
+                            <div className="grid grid-cols-3 gap-8 items-center">
+                                <motion.div
+                                    className="text-center space-y-2 group"
+                                    whileHover={{ scale: 1.05 }}
+                                >
+                                    <div className="flex items-center justify-center gap-1 text-amber-400">
+                                        {[...Array(5)].map((_, i) => (
+                                            <motion.div
+                                                key={i}
+                                                initial={{ opacity: 0, scale: 0 }}
+                                                animate={{ opacity: 1, scale: 1 }}
+                                                transition={{ delay: 1.4 + i * 0.05 }}
+                                            >
+                                                <Star className="w-5 h-5 fill-current" />
+                                            </motion.div>
+                                        ))}
+                                    </div>
+                                    <p className="text-gray-400 text-sm">Secure & Private</p>
+                                </motion.div>
+
+                                <motion.div
+                                    className="text-center space-y-2 group"
+                                    whileHover={{ scale: 1.05 }}
+                                >
+                                    <Shield className="w-8 h-8 text-purple-400 mx-auto group-hover:text-amber-400 transition-colors" />
+                                    <p className="text-gray-400 text-sm">Code Never Stored</p>
+                                </motion.div>
+
+                                <motion.div
+                                    className="text-center space-y-2 group"
+                                    whileHover={{ scale: 1.05 }}
+                                >
+                                    <Zap className="w-8 h-8 text-amber-400 mx-auto group-hover:text-purple-400 transition-colors" />
+                                    <p className="text-gray-400 text-sm">Lightning Fast</p>
+                                </motion.div>
+                            </div>
                         </div>
                     </motion.div>
 
