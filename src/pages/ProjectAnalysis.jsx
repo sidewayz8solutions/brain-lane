@@ -325,11 +325,12 @@ export default function ProjectAnalysis() {
     const isReady = project.status === 'ready' || project.status === 'completed';
 
     return (
-        <div className="min-h-screen bg-slate-950 text-white">
-            {/* Background */}
+        <div className="min-h-screen bg-[#1a0f2e] text-white">
+            {/* Background - LSU Purple */}
             <div className="fixed inset-0 overflow-hidden pointer-events-none">
-                <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-600/10 rounded-full blur-3xl" />
-                <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-cyan-600/10 rounded-full blur-3xl" />
+                <div className="absolute top-0 left-1/4 w-96 h-96 bg-[#461D7C]/30 rounded-full blur-3xl" />
+                <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-[#FDD023]/10 rounded-full blur-3xl" />
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-[#461D7C]/20 rounded-full blur-[100px]" />
             </div>
 
             <div className="relative z-10 max-w-7xl mx-auto px-6 py-8">
@@ -337,12 +338,12 @@ export default function ProjectAnalysis() {
                 <div className="flex items-center justify-between mb-8">
                     <div className="flex items-center gap-4">
                         <Link to={createPageUrl('Home')}>
-                            <Button variant="ghost" size="icon" className="text-slate-400 hover:text-white">
+                            <Button variant="ghost" size="icon" className="text-[#FDD023]/70 hover:text-[#FDD023]">
                                 <ArrowLeft className="w-5 h-5" />
                             </Button>
                         </Link>
                         <div>
-                            <h1 className="text-2xl font-bold">{project.name}</h1>
+                            <h1 className="text-2xl font-bold text-[#FDD023] glow-gold-subtle">{project.name}</h1>
                             <div className="flex items-center gap-3 mt-2">
                                 <StatusBadge status={project.status} />
                                 {Array.isArray(project.detected_stack) ? (
@@ -366,14 +367,14 @@ export default function ProjectAnalysis() {
                     {isReady && (
                         <div className="flex items-center gap-2">
                             <Link to={createPageUrl('ProjectHealth') + `?id=${project.id}`}>
-                                <Button variant="outline" className="border-slate-700">
+                                <Button variant="outline" className="border-[#461D7C] text-[#FDD023] hover:bg-[#461D7C]/30">
                                     <Flame className="w-4 h-4 mr-2" />
                                     Health Dashboard
                                 </Button>
                             </Link>
                             {tasks.length > 0 && (
                                 <Link to={createPageUrl('TaskView') + `?projectId=${project.id}`}>
-                                    <Button className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500">
+                                    <Button className="bg-gradient-to-r from-[#461D7C] to-[#6B3FA0] hover:from-[#5a2599] hover:to-[#7c4cb3] text-[#FDD023]">
                                         <Sparkles className="w-4 h-4 mr-2" />
                                         View Tasks ({tasks.length})
                                     </Button>
@@ -388,19 +389,19 @@ export default function ProjectAnalysis() {
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
-                        className="bg-slate-900/80 backdrop-blur-xl rounded-2xl border border-slate-700/50 p-12 text-center"
+                        className="bg-[#2D1250]/80 backdrop-blur-xl rounded-2xl border border-[#461D7C]/50 p-12 text-center"
                     >
                         <div className="w-20 h-20 mx-auto mb-6 relative">
-                            <div className="absolute inset-0 bg-cyan-500/20 rounded-full animate-ping" />
-                            <div className="relative w-full h-full bg-gradient-to-br from-blue-600 to-cyan-600 rounded-full flex items-center justify-center">
-                                <Brain className="w-10 h-10 text-white" />
+                            <div className="absolute inset-0 bg-[#FDD023]/20 rounded-full animate-ping" />
+                            <div className="relative w-full h-full bg-gradient-to-br from-[#461D7C] to-[#6B3FA0] rounded-full flex items-center justify-center">
+                                <Brain className="w-10 h-10 text-[#FDD023]" />
                             </div>
                         </div>
-                        <h2 className="text-xl font-semibold mb-2">Analyzing Your Project</h2>
-                        <p className="text-slate-400 mb-6">
+                        <h2 className="text-xl font-semibold mb-2 text-[#FDD023]">Analyzing Your Project</h2>
+                        <p className="text-[#FDD023]/60 mb-6">
                             Our AI is scanning your codebase, detecting the stack, and creating a completion plan...
                         </p>
-                        <div className="flex items-center justify-center gap-2 text-sm text-slate-500">
+                        <div className="flex items-center justify-center gap-2 text-sm text-[#FDD023]/40">
                             <Loader2 className="w-4 h-4 animate-spin" />
                             This usually takes 15-30 seconds
                         </div>
@@ -416,7 +417,7 @@ export default function ProjectAnalysis() {
                     >
                         {/* Summary Card */}
                         {project.summary && (
-                            <div className="bg-slate-900/80 backdrop-blur-xl rounded-2xl border border-slate-700/50 p-6">
+                            <div className="bg-[#2D1250]/80 backdrop-blur-xl rounded-2xl border border-[#461D7C]/50 p-6">
                                 <h3 className="text-sm font-medium text-slate-400 uppercase tracking-wider mb-3">
                                     Project Summary
                                 </h3>

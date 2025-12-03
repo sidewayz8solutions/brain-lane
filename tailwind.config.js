@@ -10,32 +10,42 @@ module.exports = {
   			sm: 'calc(var(--radius) - 4px)'
   		},
   		colors: {
-  			// Brain Lane custom colors - Purple & Gold
-  			royal: {
-  				50: '#faf5ff',
-  				100: '#f3e8ff',
-  				200: '#e9d5ff',
-  				300: '#d8b4fe',
-  				400: '#c084fc',
-  				500: '#a855f7',
-  				600: '#9333ea',
-  				700: '#7c3aed',
-  				800: '#6b21a8',
-  				900: '#581c87',
-  				950: '#3b0764',
+  			// LSU Official Colors - Purple & Gold
+  			lsu: {
+  				purple: '#461D7C',
+  				gold: '#FDD023',
+  				'purple-dark': '#2D1250',
+  				'purple-light': '#6B3FA0',
+  				'gold-dark': '#D4A800',
+  				'gold-light': '#FFE566',
   			},
+  			// Extended purple palette
+  			royal: {
+  				50: '#f5f0ff',
+  				100: '#ede5ff',
+  				200: '#ddd0ff',
+  				300: '#c4a8ff',
+  				400: '#a670ff',
+  				500: '#8b3dff',
+  				600: '#7c1aff',
+  				700: '#6b0ef0',
+  				800: '#461D7C', // LSU Purple
+  				900: '#3a1566',
+  				950: '#2D1250',
+  			},
+  			// Extended gold palette
   			gold: {
-  				50: '#fffbeb',
-  				100: '#fef3c7',
-  				200: '#fde68a',
-  				300: '#fcd34d',
-  				400: '#fbbf24',
-  				500: '#f59e0b',
-  				600: '#d97706',
-  				700: '#b45309',
-  				800: '#92400e',
-  				900: '#78350f',
-  				950: '#451a03',
+  				50: '#fffef0',
+  				100: '#fffbd4',
+  				200: '#fff5a3',
+  				300: '#ffec66',
+  				400: '#FDD023', // LSU Gold
+  				500: '#f0c000',
+  				600: '#d4a800',
+  				700: '#a88200',
+  				800: '#8a6a00',
+  				900: '#735600',
+  				950: '#4d3900',
   			},
   			background: 'hsl(var(--background))',
   			foreground: 'hsl(var(--foreground))',

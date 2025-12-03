@@ -624,30 +624,30 @@ export default function ProjectHealth() {
                 </div>
 
                 {/* Quick Actions */}
-                <div className="mt-6 p-4 rounded-xl border border-slate-700/50 bg-slate-900/80">
-                    <h3 className="font-medium text-white mb-3">Quick Actions</h3>
+                <div className="mt-6 p-4 rounded-xl border border-[#461D7C]/50 bg-[#1a0f2e]/80">
+                    <h3 className="font-medium text-[#FDD023] mb-3">Quick Actions</h3>
                     <div className="flex flex-wrap gap-2">
                         <Link to={createPageUrl('TaskView') + `?projectId=${projectId}`}>
-                            <Button variant="outline" size="sm" className="border-slate-700">
+                            <Button variant="outline" size="sm" className="border-[#461D7C] bg-[#461D7C]/20 text-[#FDD023] hover:bg-[#461D7C]/40 hover:text-white">
                                 <Code className="w-4 h-4 mr-1" />
                                 View Tasks
                             </Button>
                         </Link>
                         <Link to={createPageUrl('ProjectAnalysis') + `?id=${projectId}`}>
-                            <Button variant="outline" size="sm" className="border-slate-700">
+                            <Button variant="outline" size="sm" className="border-[#461D7C] bg-[#461D7C]/20 text-[#FDD023] hover:bg-[#461D7C]/40 hover:text-white">
                                 <BarChart3 className="w-4 h-4 mr-1" />
                                 Full Analysis
                             </Button>
                         </Link>
-                        <Button variant="outline" size="sm" className="border-slate-700">
+                        <Button variant="outline" size="sm" className="border-[#461D7C] bg-[#461D7C]/20 text-[#FDD023] hover:bg-[#461D7C]/40 hover:text-white">
                             <GitBranch className="w-4 h-4 mr-1" />
                             Deploy Now
                         </Button>
-                        <Button variant="outline" size="sm" className="border-slate-700">
+                        <Button variant="outline" size="sm" className="border-[#461D7C] bg-[#461D7C]/20 text-[#FDD023] hover:bg-[#461D7C]/40 hover:text-white">
                             <TestTube className="w-4 h-4 mr-1" />
                             Run Tests
                         </Button>
-                        <Button variant="outline" size="sm" className="border-slate-700">
+                        <Button variant="outline" size="sm" className="border-[#461D7C] bg-[#461D7C]/20 text-[#FDD023] hover:bg-[#461D7C]/40 hover:text-white">
                             <Shield className="w-4 h-4 mr-1" />
                             Security Scan
                         </Button>
