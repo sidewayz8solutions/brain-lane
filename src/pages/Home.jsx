@@ -1,12 +1,9 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Sparkles, Zap, GitBranch, CheckCircle, ArrowRight, Brain, Code2, Cpu, Shield, Rocket } from 'lucide-react';
+import { Sparkles, Zap, GitBranch, CheckCircle, ArrowRight, Brain, Code2, Cpu, Shield, Rocket, Star } from 'lucide-react';
 import FileUploader from '../components/upload/FileUploader';
 import { createPageUrl } from '@/utils';
-import AnimatedBackground from '../components/ui/AnimatedBackground';
-import AnimatedCard from '../components/ui/AnimatedCard';
-import { GradientText, WordReveal } from '../components/ui/AnimatedText';
 import { useProjectStore } from '@/store/projectStore';
 import { UploadFile, ExtractZipContents, AnalyzeProjectStructure } from '@/api/integrations';
 
@@ -58,10 +55,10 @@ export default function Home() {
     };
 
     const features = [
-        { icon: Brain, title: 'AI Code Analysis', desc: 'Detects your stack and finds issues automatically', color: 'cyan' },
-        { icon: Zap, title: 'Smart Task Generation', desc: 'Creates actionable tasks to complete your project', color: 'yellow' },
-        { icon: GitBranch, title: 'Clean Diffs', desc: 'Review and approve changes like pull requests', color: 'green' },
-        { icon: CheckCircle, title: 'One-Click Apply', desc: 'Download patches or export modified code', color: 'purple' },
+        { icon: Brain, title: 'AI Code Analysis', desc: 'Detects your stack and finds issues automatically' },
+        { icon: Zap, title: 'Smart Task Generation', desc: 'Creates actionable tasks to complete your project' },
+        { icon: GitBranch, title: 'Clean Diffs', desc: 'Review and approve changes like pull requests' },
+        { icon: CheckCircle, title: 'One-Click Apply', desc: 'Download patches or export modified code' },
     ];
 
     const stats = [
@@ -83,8 +80,8 @@ export default function Home() {
 
     const itemVariants = {
         hidden: { opacity: 0, y: 30 },
-        visible: { 
-            opacity: 1, 
+        visible: {
+            opacity: 1,
             y: 0,
             transition: {
                 type: "spring",
@@ -95,35 +92,63 @@ export default function Home() {
     };
 
     return (
-        <div className="min-h-screen bg-slate-950 text-white overflow-x-hidden">
-            <AnimatedBackground />
+        <div className="min-h-screen bg-gray-950 text-white overflow-x-hidden relative">
+            {/* Animated Background - Purple & Gold Theme */}
+            <div className="fixed inset-0 overflow-hidden pointer-events-none">
+                {/* Gradient orbs */}
+                <motion.div
+                    className="absolute top-0 left-1/4 w-[600px] h-[600px] bg-purple-600/20 rounded-full blur-[120px]"
+                    animate={{
+                        x: [0, 100, 0],
+                        y: [0, 50, 0],
+                        scale: [1, 1.2, 1]
+                    }}
+                    transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
+                />
+                <motion.div
+                    className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-amber-500/15 rounded-full blur-[100px]"
+                    animate={{
+                        x: [0, -80, 0],
+                        y: [0, -60, 0],
+                        scale: [1, 1.1, 1]
+                    }}
+                    transition={{ duration: 15, repeat: Infinity, ease: "easeInOut" }}
+                />
+                <motion.div
+                    className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] bg-violet-500/10 rounded-full blur-[80px]"
+                    animate={{ scale: [1, 1.3, 1] }}
+                    transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
+                />
+                {/* Grid overlay */}
+                <div className="absolute inset-0 bg-[linear-gradient(rgba(139,92,246,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(139,92,246,0.03)_1px,transparent_1px)] bg-[size:60px_60px]" />
+            </div>
 
             <div className="relative z-10">
                 {/* Hero Section */}
-                <div className="max-w-6xl mx-auto px-6 pt-16 pb-12">
+                <div className="max-w-6xl mx-auto px-6 pt-20 pb-12">
                     <motion.div
                         variants={containerVariants}
                         initial="hidden"
                         animate="visible"
                         className="text-center"
                     >
-                        {/* Logo with pulse animation */}
-                        <motion.div 
+                        {/* Logo */}
+                        <motion.div
                             variants={itemVariants}
-                            className="flex items-center justify-center gap-3 mb-10"
+                            className="flex items-center justify-center gap-4 mb-12"
                         >
-                            <motion.div 
+                            <motion.div
                                 className="relative"
                                 whileHover={{ scale: 1.1, rotate: 5 }}
                                 transition={{ type: "spring", bounce: 0.6 }}
                             >
-                                <div className="absolute inset-0 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-2xl blur-lg opacity-50 animate-pulse" />
-                                <div className="relative w-14 h-14 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-2xl flex items-center justify-center shadow-lg shadow-cyan-500/25">
-                                    <Brain className="w-8 h-8 text-white" />
+                                <div className="absolute inset-0 bg-gradient-to-br from-purple-500 to-amber-400 rounded-2xl blur-xl opacity-60 animate-pulse" />
+                                <div className="relative w-16 h-16 bg-gradient-to-br from-purple-600 via-violet-600 to-amber-500 rounded-2xl flex items-center justify-center shadow-2xl shadow-purple-500/30 border border-purple-400/20">
+                                    <Brain className="w-9 h-9 text-white" />
                                 </div>
                             </motion.div>
-                            <motion.h1 
-                                className="text-3xl font-bold tracking-tight"
+                            <motion.h1
+                                className="text-4xl font-bold bg-gradient-to-r from-white via-purple-200 to-amber-200 bg-clip-text text-transparent"
                                 initial={{ opacity: 0, x: -20 }}
                                 animate={{ opacity: 1, x: 0 }}
                                 transition={{ delay: 0.3 }}
@@ -132,81 +157,82 @@ export default function Home() {
                             </motion.h1>
                         </motion.div>
 
-                        {/* Headline with animated gradient */}
-                        <motion.div variants={itemVariants} className="mb-6">
+                        {/* Headline */}
+                        <motion.div variants={itemVariants} className="mb-8">
                             <h2 className="text-5xl md:text-7xl font-bold leading-tight tracking-tight">
-                                <span className="block text-white mb-2">
-                                    <WordReveal text="AI That Finishes" delay={0.5} />
-                                </span>
-                                <GradientText colors={['from-blue-400', 'via-cyan-400', 'to-blue-400']}>
+                                <span className="block text-white mb-3">AI That Finishes</span>
+                                <span className="bg-gradient-to-r from-purple-400 via-violet-400 to-amber-400 bg-clip-text text-transparent">
                                     Your Code
-                                </GradientText>
+                                </span>
                             </h2>
                         </motion.div>
 
                         {/* Subheadline */}
-                        <motion.p 
+                        <motion.p
                             variants={itemVariants}
-                            className="text-lg md:text-xl text-slate-400 max-w-2xl mx-auto mb-8 leading-relaxed"
+                            className="text-lg md:text-xl text-gray-400 max-w-2xl mx-auto mb-10 leading-relaxed"
                         >
                             Upload your project. Our AI analyzes it, creates a completion plan,
                             and implements missing features — all reviewable as clean diffs.
                         </motion.p>
 
                         {/* Stats row */}
-                        <motion.div 
+                        <motion.div
                             variants={itemVariants}
-                            className="flex items-center justify-center gap-8 mb-12"
+                            className="flex items-center justify-center gap-12 mb-14"
                         >
                             {stats.map((stat, idx) => (
                                 <motion.div
                                     key={idx}
-                                    className="text-center"
+                                    className="text-center group"
                                     whileHover={{ scale: 1.1 }}
                                 >
-                                    <div className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">
+                                    <div className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-purple-400 to-amber-400 bg-clip-text text-transparent group-hover:from-amber-400 group-hover:to-purple-400 transition-all duration-300">
                                         {stat.value}
                                     </div>
-                                    <div className="text-xs text-slate-500 uppercase tracking-wider mt-1">
+                                    <div className="text-xs text-gray-500 uppercase tracking-widest mt-2 font-medium">
                                         {stat.label}
                                     </div>
                                 </motion.div>
                             ))}
                         </motion.div>
 
-                        {/* Features Grid */}
-                        <motion.div 
+                        {/* Features Grid - Glassmorphism Cards */}
+                        <motion.div
                             variants={containerVariants}
-                            className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto mb-16"
+                            className="grid grid-cols-2 md:grid-cols-4 gap-5 max-w-5xl mx-auto mb-20"
                         >
                             {features.map((feature, idx) => (
                                 <motion.div
                                     key={idx}
                                     variants={itemVariants}
-                                    whileHover={{ y: -5, scale: 1.02 }}
+                                    whileHover={{ y: -8, scale: 1.03 }}
                                     transition={{ type: "spring", bounce: 0.4 }}
+                                    className="group"
                                 >
-                                    <AnimatedCard 
-                                        className="p-5 h-full" 
-                                        glowColor={feature.color}
-                                        enableTilt={true}
-                                    >
-                                        <motion.div
-                                            initial={{ scale: 0 }}
-                                            animate={{ scale: 1 }}
-                                            transition={{ delay: 0.5 + idx * 0.1, type: "spring", bounce: 0.6 }}
-                                        >
-                                            <feature.icon className="w-7 h-7 text-cyan-400 mb-3 mx-auto" />
-                                        </motion.div>
-                                        <h3 className="font-semibold text-sm text-white mb-1.5">{feature.title}</h3>
-                                        <p className="text-xs text-slate-400 leading-relaxed">{feature.desc}</p>
-                                    </AnimatedCard>
+                                    <div className="relative h-full p-6 rounded-2xl bg-gray-900/50 backdrop-blur-xl border border-gray-800/50 hover:border-purple-500/30 transition-all duration-300 overflow-hidden">
+                                        {/* Hover glow */}
+                                        <div className="absolute inset-0 bg-gradient-to-br from-purple-600/10 to-amber-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+
+                                        <div className="relative z-10">
+                                            <motion.div
+                                                className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-600/20 to-amber-500/20 flex items-center justify-center mb-4 mx-auto border border-purple-500/20 group-hover:border-amber-400/30 transition-colors"
+                                                initial={{ scale: 0 }}
+                                                animate={{ scale: 1 }}
+                                                transition={{ delay: 0.5 + idx * 0.1, type: "spring", bounce: 0.6 }}
+                                            >
+                                                <feature.icon className="w-6 h-6 text-purple-400 group-hover:text-amber-400 transition-colors" />
+                                            </motion.div>
+                                            <h3 className="font-semibold text-white mb-2 group-hover:text-purple-200 transition-colors">{feature.title}</h3>
+                                            <p className="text-sm text-gray-500 leading-relaxed">{feature.desc}</p>
+                                        </div>
+                                    </div>
                                 </motion.div>
                             ))}
                         </motion.div>
                     </motion.div>
 
-                    {/* Upload Section */}
+                    {/* Upload Section - Keep the analyzer box styling */}
                     <motion.div
                         initial={{ opacity: 0, y: 40, scale: 0.95 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -214,88 +240,89 @@ export default function Home() {
                         className="max-w-2xl mx-auto"
                     >
                         <div className="relative">
-                            {/* Glow effect behind card */}
-                            <div className="absolute -inset-1 bg-gradient-to-r from-blue-600/20 via-cyan-600/20 to-purple-600/20 rounded-[2rem] blur-xl" />
-                            
-                            <div className="relative bg-slate-900/90 backdrop-blur-2xl rounded-3xl border border-slate-700/50 p-8 shadow-2xl">
-                                <motion.div 
+                            {/* Glow effect behind card - Purple & Gold */}
+                            <div className="absolute -inset-2 bg-gradient-to-r from-purple-600/30 via-violet-500/20 to-amber-500/30 rounded-[2rem] blur-2xl" />
+
+                            <div className="relative bg-gray-900/80 backdrop-blur-2xl rounded-3xl border border-gray-700/50 p-8 shadow-2xl">
+                                <motion.div
                                     className="flex items-center gap-2 justify-center mb-6"
                                     initial={{ opacity: 0 }}
                                     animate={{ opacity: 1 }}
                                     transition={{ delay: 0.8 }}
                                 >
                                     <motion.div
-                                        animate={{ 
+                                        animate={{
                                             rotate: [0, 15, -15, 0],
                                             scale: [1, 1.2, 1.2, 1]
                                         }}
-                                        transition={{ 
-                                            duration: 2, 
+                                        transition={{
+                                            duration: 2,
                                             repeat: Infinity,
                                             repeatDelay: 3
                                         }}
                                     >
-                                        <Sparkles className="w-5 h-5 text-cyan-400" />
+                                        <Sparkles className="w-5 h-5 text-amber-400" />
                                     </motion.div>
-                                    <span className="text-slate-300 font-medium">Start Your Analysis</span>
+                                    <span className="text-gray-300 font-medium">Start Your Analysis</span>
                                 </motion.div>
-                                
+
                                 <FileUploader onUpload={handleUpload} isUploading={isUploading} />
                             </div>
                         </div>
                     </motion.div>
 
-                    {/* How it works - Enhanced */}
+                    {/* How it works */}
                     <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         transition={{ delay: 0.9 }}
-                        className="mt-24 text-center"
+                        className="mt-28 text-center"
                     >
-                        <motion.h3 
-                            className="text-sm font-medium text-slate-500 uppercase tracking-wider mb-10"
+                        <motion.h3
+                            className="text-sm font-semibold text-purple-400/80 uppercase tracking-[0.2em] mb-12"
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 1 }}
                         >
                             How it works
                         </motion.h3>
-                        
-                        <div className="flex items-center justify-center gap-4 md:gap-8 flex-wrap max-w-4xl mx-auto">
+
+                        <div className="flex items-center justify-center gap-6 md:gap-10 flex-wrap max-w-5xl mx-auto">
                             {[
-                                { step: 'Upload Project', icon: Rocket },
-                                { step: 'AI Analyzes', icon: Cpu },
-                                { step: 'Review Tasks', icon: Code2 },
-                                { step: 'Apply Changes', icon: Shield },
+                                { step: 'Upload Project', icon: Rocket, num: '01' },
+                                { step: 'AI Analyzes', icon: Cpu, num: '02' },
+                                { step: 'Review Tasks', icon: Code2, num: '03' },
+                                { step: 'Apply Changes', icon: Shield, num: '04' },
                             ].map((item, idx) => (
                                 <React.Fragment key={idx}>
-                                    <motion.div 
-                                        className="flex items-center gap-3 group"
+                                    <motion.div
+                                        className="flex flex-col items-center gap-4 group"
                                         initial={{ opacity: 0, y: 20 }}
                                         animate={{ opacity: 1, y: 0 }}
                                         transition={{ delay: 1.1 + idx * 0.1 }}
                                         whileHover={{ scale: 1.05 }}
                                     >
-                                        <motion.div 
+                                        <motion.div
                                             className="relative"
                                             whileHover={{ rotate: 360 }}
-                                            transition={{ duration: 0.5 }}
+                                            transition={{ duration: 0.6 }}
                                         >
-                                            <div className="absolute inset-0 bg-cyan-500/20 rounded-full blur-md opacity-0 group-hover:opacity-100 transition-opacity" />
-                                            <div className="relative w-12 h-12 rounded-full bg-slate-800 border border-slate-700 group-hover:border-cyan-500/50 flex items-center justify-center transition-colors">
-                                                <item.icon className="w-5 h-5 text-cyan-400" />
+                                            <div className="absolute inset-0 bg-gradient-to-br from-purple-500/30 to-amber-400/30 rounded-2xl blur-lg opacity-0 group-hover:opacity-100 transition-opacity" />
+                                            <div className="relative w-16 h-16 rounded-2xl bg-gray-900 border border-gray-800 group-hover:border-purple-500/50 flex items-center justify-center transition-all duration-300">
+                                                <item.icon className="w-7 h-7 text-purple-400 group-hover:text-amber-400 transition-colors" />
                                             </div>
+                                            <span className="absolute -top-2 -right-2 text-xs font-bold text-amber-400/60 bg-gray-900 px-2 py-0.5 rounded-full border border-gray-800">{item.num}</span>
                                         </motion.div>
-                                        <span className="text-slate-300 text-sm font-medium">{item.step}</span>
+                                        <span className="text-gray-400 text-sm font-medium group-hover:text-white transition-colors">{item.step}</span>
                                     </motion.div>
                                     {idx < 3 && (
                                         <motion.div
                                             initial={{ opacity: 0, scale: 0 }}
                                             animate={{ opacity: 1, scale: 1 }}
                                             transition={{ delay: 1.2 + idx * 0.1 }}
-                                            className="hidden md:block"
+                                            className="hidden md:flex items-center"
                                         >
-                                            <ArrowRight className="w-5 h-5 text-slate-600" />
+                                            <div className="w-12 h-[2px] bg-gradient-to-r from-purple-500/50 to-amber-400/50" />
                                         </motion.div>
                                     )}
                                 </React.Fragment>
@@ -303,8 +330,8 @@ export default function Home() {
                         </div>
                     </motion.div>
 
-                    {/* Bottom gradient fade */}
-                    <div className="h-32" />
+                    {/* Bottom spacer */}
+                    <div className="h-24" />
                 </div>
             </div>
         </div>
