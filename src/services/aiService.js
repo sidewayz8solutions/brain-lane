@@ -9,6 +9,12 @@ const AI_CONFIG = {
   demoMode: !import.meta.env.VITE_OPENAI_API_KEY,
 };
 
+// Log mode on startup
+console.log('🧠 Brain Lane AI Mode:', AI_CONFIG.demoMode ? 'DEMO (mock data)' : 'LIVE (OpenAI API)');
+if (!AI_CONFIG.demoMode) {
+  console.log('🔑 API Key loaded:', AI_CONFIG.apiKey?.slice(0, 20) + '...');
+}
+
 // Mock responses for demo mode - returns properly structured data for ProjectAnalysis
 const getMockResponse = (prompt, context) => {
   const lowerPrompt = prompt.toLowerCase();
@@ -93,6 +99,7 @@ export const InvokeLLM = async ({ prompt, response_json_schema, add_context_from
 
   // Real API call to OpenAI
   try {
+    console.log('🚀 Making real OpenAI API call...');
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -106,11 +113,19 @@ export const InvokeLLM = async ({ prompt, response_json_schema, add_context_from
       }),
     });
     
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error('❌ OpenAI API Error:', response.status, errorData);
+      throw new Error(`OpenAI API Error: ${response.status} - ${errorData.error?.message || 'Unknown error'}`);
+    }
+    
     const data = await response.json();
+    console.log('✅ OpenAI API Response received');
     const content = data.choices[0]?.message?.content;
     return response_json_schema ? JSON.parse(content) : content;
   } catch (error) {
-    console.error('AI Service Error:', error);
+    console.error('❌ AI Service Error:', error);
+    console.log('⚠️ Falling back to mock data...');
     return getMockResponse(prompt, {});
   }
 };
