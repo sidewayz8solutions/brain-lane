@@ -1,5 +1,6 @@
-import React, { useRef } from 'react';
-import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
+import { useRef } from 'react';
+import PropTypes from 'prop-types';
+import { motion, useMotionValue, useSpring } from 'framer-motion';
 import { cn } from "@/lib/utils";
 
 export default function AnimatedButton({ 
@@ -111,3 +112,13 @@ export default function AnimatedButton({
         </motion.button>
     );
 }
+
+AnimatedButton.propTypes = {
+    children: PropTypes.node,
+    className: PropTypes.string,
+    variant: PropTypes.oneOf(['primary', 'secondary', 'ghost', 'danger', 'success']),
+    size: PropTypes.oneOf(['sm', 'default', 'lg', 'xl']),
+    disabled: PropTypes.bool,
+    loading: PropTypes.bool,
+    onClick: PropTypes.func,
+};

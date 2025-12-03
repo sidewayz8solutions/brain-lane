@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion';
+import PropTypes from 'prop-types';
 
 export default function FloatingParticles({ count = 20, className = '' }) {
     const particles = Array.from({ length: count }, (_, i) => ({
@@ -39,3 +40,8 @@ export default function FloatingParticles({ count = 20, className = '' }) {
         </div>
     );
 }
+
+FloatingParticles.propTypes = {
+    count: PropTypes.number,
+    className: PropTypes.string,
+};

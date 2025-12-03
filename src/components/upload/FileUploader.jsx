@@ -1,4 +1,5 @@
-import React, { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback } from 'react';
+import PropTypes from 'prop-types';
 import { Upload, FileArchive, Github, X, CheckCircle, AlertCircle, Sparkles } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence, useMotionValue, useSpring } from 'framer-motion';
@@ -524,3 +525,8 @@ export default function FileUploader({ onUpload, isUploading }) {
         </div>
     );
 }
+
+FileUploader.propTypes = {
+    onUpload: PropTypes.func.isRequired,
+    isUploading: PropTypes.bool.isRequired,
+};
