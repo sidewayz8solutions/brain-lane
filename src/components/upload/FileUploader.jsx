@@ -287,14 +287,14 @@ export default function FileUploader({ onUpload, isUploading }) {
                                         className="space-y-5"
                                     >
                                         <motion.div
-                                            className="relative w-24 h-24 mx-auto bg-gradient-to-br from-[#FFE566]/20 to-[#461D7C]/20 rounded-2xl flex items-center justify-center border border-[#FFE566]/30"
+                                            className="relative w-24 h-24 mx-auto bg-gradient-to-br from-green-500/20 to-cyan-500/20 rounded-2xl flex items-center justify-center border border-green-500/30"
                                             initial={{ rotate: -10 }}
                                             animate={{ 
                                                 rotate: 0,
                                                 boxShadow: [
-                                                    '0 0 20px rgba(255, 229, 102, 0.3)',
-                                                    '0 0 30px rgba(255, 229, 102, 0.4)',
-                                                    '0 0 20px rgba(255, 229, 102, 0.3)'
+                                                    '0 0 20px rgba(34, 197, 94, 0.3)',
+                                                    '0 0 30px rgba(34, 197, 94, 0.4)',
+                                                    '0 0 20px rgba(34, 197, 94, 0.3)'
                                                 ]
                                             }}
                                             transition={{ 
@@ -307,7 +307,7 @@ export default function FileUploader({ onUpload, isUploading }) {
                                                 animate={{ scale: 1 }}
                                                 transition={{ delay: 0.2, type: "spring", bounce: 0.6 }}
                                             >
-                                                <CheckCircle className="w-12 h-12 text-[#FFE566]" />
+                                                <CheckCircle className="w-12 h-12 text-green-400" />
                                             </motion.div>
                                         </motion.div>
                                         <div className="space-y-2">
@@ -325,18 +325,18 @@ export default function FileUploader({ onUpload, isUploading }) {
                                                 animate={{ opacity: 1 }}
                                                 transition={{ delay: 0.2 }}
                                             >
-                                                <span className="text-[#FFE566] font-medium">
+                                                <span className="text-green-400 font-medium">
                                                     {formatFileSize(selectedFile.size)}
                                                 </span>
-                                                <span className="text-gray-600">•</span>
-                                                <span className="text-gray-400">
+                                                <span className="text-slate-600">•</span>
+                                                <span className="text-slate-400">
                                                     Ready to analyze
                                                 </span>
                                             </motion.div>
                                         </div>
                                         <motion.button
                                             onClick={(e) => { e.stopPropagation(); clearSelection(); }}
-                                            className="text-gray-400 hover:text-white text-sm flex items-center gap-2 mx-auto px-4 py-2 rounded-lg hover:bg-[#461D7C]/20 border border-gray-700/50 hover:border-[#461D7C]/30 transition-colors"
+                                            className="text-slate-400 hover:text-white text-sm flex items-center gap-2 mx-auto px-4 py-2 rounded-lg hover:bg-red-500/20 border border-slate-700/50 hover:border-red-500/30 transition-colors"
                                             whileHover={{ scale: 1.05 }}
                                             whileTap={{ scale: 0.95 }}
                                         >
@@ -352,7 +352,7 @@ export default function FileUploader({ onUpload, isUploading }) {
                                         className="space-y-4"
                                     >
                                         <motion.div
-                                            className="w-20 h-20 mx-auto bg-gradient-to-br from-[#461D7C]/20 to-[#FFE566]/20 rounded-2xl flex items-center justify-center border border-[#461D7C]/30"
+                                            className="w-20 h-20 mx-auto bg-gradient-to-br from-cyan-500/20 to-purple-500/20 rounded-2xl flex items-center justify-center border border-cyan-500/30"
                                             animate={{
                                                 y: dragActive ? -5 : 0,
                                                 scale: dragActive ? 1.1 : 1,
@@ -361,47 +361,56 @@ export default function FileUploader({ onUpload, isUploading }) {
                                         >
                                             <Upload className={cn(
                                                 "w-10 h-10 transition-colors",
-                                                dragActive ? "text-[#FFE566]" : "text-[#461D7C]"
+                                                dragActive ? "text-cyan-400" : "text-purple-400"
                                             )} />
                                         </motion.div>
                                         <div>
                                             <p className="text-white font-medium text-lg">
                                                 {dragActive ? 'Drop it here!' : 'Drop your project ZIP here'}
                                             </p>
-                                            <p className="text-gray-400 text-sm mt-2">
+                                            <p className="text-slate-400 text-sm mt-2">
                                                 or click to browse
                                             </p>
                                             <motion.div
-                                                className="mt-3 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#461D7C]/10 border border-[#461D7C]/20"
+                                                className="mt-3 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-cyan-500/10 border border-cyan-500/20"
                                                 initial={{ opacity: 0, scale: 0.9 }}
                                                 animate={{ opacity: 1, scale: 1 }}
                                                 transition={{ delay: 0.3 }}
                                             >
-                                                <span className="text-[#FFE566] text-xs font-medium">
+                                                <span className="text-cyan-400 text-xs font-medium">
                                                     Max {MAX_SIZE_MB}MB
                                                 </span>
                                             </motion.div>
                                         </div>
 
-                                        {/* Supported stacks - Purple & Gold */}
+                                        {/* Supported stacks - Vibrant */}
                                         <div className="pt-4">
-                                            <p className="text-gray-500 text-xs mb-3">Supports:</p>
+                                            <p className="text-slate-500 text-xs mb-3">Supports:</p>
                                             <div className="flex items-center justify-center gap-2 flex-wrap">
-                                                {['React', 'Next.js', 'Vue', 'Python', 'Node.js', 'FastAPI', 'Django', 'Flask'].map((tech, i) => (
-                                                    <motion.span
-                                                        key={tech}
-                                                        className="px-3 py-1 text-xs rounded-full bg-gradient-to-r from-[#461D7C]/10 to-[#FFE566]/10 text-[#FFE566] border border-[#461D7C]/20 hover:border-[#FFE566]/30 transition-colors"
-                                                        initial={{ opacity: 0, scale: 0 }}
-                                                        animate={{ opacity: 1, scale: 1 }}
-                                                        transition={{ delay: 0.3 + i * 0.06 }}
-                                                        whileHover={{ scale: 1.05 }}
-                                                    >
-                                                        {tech}
-                                                    </motion.span>
-                                                ))}
+                                                {['React', 'Next.js', 'Vue', 'Python', 'Node.js', 'FastAPI', 'Django', 'Flask'].map((tech, i) => {
+                                                    const techColors = ['cyan', 'purple', 'green', 'orange', 'cyan', 'purple', 'green', 'orange'];
+                                                    const colorClass = {
+                                                        cyan: 'from-cyan-500/10 to-cyan-500/5 text-cyan-400 border-cyan-500/20 hover:border-cyan-400/40',
+                                                        purple: 'from-purple-500/10 to-purple-500/5 text-purple-400 border-purple-500/20 hover:border-purple-400/40',
+                                                        green: 'from-green-500/10 to-green-500/5 text-green-400 border-green-500/20 hover:border-green-400/40',
+                                                        orange: 'from-orange-500/10 to-orange-500/5 text-orange-400 border-orange-500/20 hover:border-orange-400/40'
+                                                    }[techColors[i]];
+                                                    return (
+                                                        <motion.span
+                                                            key={tech}
+                                                            className={`px-3 py-1 text-xs rounded-full bg-gradient-to-r ${colorClass} border transition-colors`}
+                                                            initial={{ opacity: 0, scale: 0 }}
+                                                            animate={{ opacity: 1, scale: 1 }}
+                                                            transition={{ delay: 0.3 + i * 0.06 }}
+                                                            whileHover={{ scale: 1.05 }}
+                                                        >
+                                                            {tech}
+                                                        </motion.span>
+                                                    );
+                                                })}
                                             </div>
                                         </div>
-                                        <p className="text-gray-600 text-xs mt-4">
+                                        <p className="text-slate-500 text-xs mt-4">
                                             💡 Tip: Exclude node_modules & virtual environments
                                         </p>
                                     </motion.div>
@@ -435,10 +444,10 @@ export default function FileUploader({ onUpload, isUploading }) {
                             <>
                                 <div className="relative group">
                                     <motion.div
-                                        className="absolute -inset-0.5 bg-gradient-to-r from-[#461D7C] to-[#FFE566] rounded-xl opacity-0 group-focus-within:opacity-100 blur transition-opacity"
+                                        className="absolute -inset-0.5 bg-gradient-to-r from-cyan-500 via-purple-500 to-green-500 rounded-xl opacity-0 group-focus-within:opacity-100 blur transition-opacity"
                                     />
                                     <div className="relative">
-                                        <Github className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#FFE566] z-10" />
+                                        <Github className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-purple-400 z-10" />
                                         <input
                                             value={githubUrl}
                                             onChange={(e) => {
@@ -446,7 +455,7 @@ export default function FileUploader({ onUpload, isUploading }) {
                                                 setError(null);
                                             }}
                                             placeholder="https://github.com/username/repository"
-                                            className="w-full pl-12 pr-4 h-14 bg-[#2D1250]/80 border border-[#461D7C] text-white placeholder:text-gray-500 rounded-xl focus:outline-none focus:border-[#FFE566]/50 transition-colors"
+                                            className="w-full pl-12 pr-4 h-14 bg-slate-900/80 border border-slate-700 text-white placeholder:text-slate-500 rounded-xl focus:outline-none focus:border-purple-500/50 transition-colors"
                                             disabled={isUploading}
                                         />
                                     </div>
@@ -466,29 +475,29 @@ export default function FileUploader({ onUpload, isUploading }) {
                                             </>
                                         ) : (
                                             <>
-                                                <AlertCircle className="w-4 h-4 text-yellow-400" />
-                                                <span className="text-yellow-400 text-sm">Enter a valid GitHub repo URL</span>
+                                                <AlertCircle className="w-4 h-4 text-orange-400" />
+                                                <span className="text-orange-400 text-sm">Enter a valid GitHub repo URL</span>
                                             </>
                                         )}
                                     </motion.div>
                                 )}
                                 
-                                <p className="text-gray-500 text-sm text-center">
+                                <p className="text-slate-500 text-sm text-center">
                                     Enter the full URL of your public GitHub repository
                                 </p>
                                 
                                 {/* Supported formats hint */}
-                                <div className="bg-[#2D1250]/50 rounded-xl p-4 border border-[#461D7C]/20">
-                                    <p className="text-[#FFE566]/70 text-xs mb-3 flex items-center gap-2">
-                                        <Sparkles className="w-3 h-3 text-[#FFE566]" />
+                                <div className="bg-slate-900/50 rounded-xl p-4 border border-purple-500/20">
+                                    <p className="text-purple-400/70 text-xs mb-3 flex items-center gap-2">
+                                        <Sparkles className="w-3 h-3 text-purple-400" />
                                         Supported formats:
                                     </p>
-                                    <div className="space-y-1 font-mono text-xs text-gray-500">
+                                    <div className="space-y-1 font-mono text-xs text-slate-500">
                                         <p className="flex items-center gap-2">
-                                            <span className="text-[#FFE566]">✓</span> https://github.com/user/repo
+                                            <span className="text-green-400">✓</span> https://github.com/user/repo
                                         </p>
                                         <p className="flex items-center gap-2">
-                                            <span className="text-[#FFE566]">✓</span> https://github.com/user/repo.git
+                                            <span className="text-green-400">✓</span> https://github.com/user/repo.git
                                         </p>
                                     </div>
                                 </div>
