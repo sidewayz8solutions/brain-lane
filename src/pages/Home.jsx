@@ -130,7 +130,7 @@ export default function Home() {
                     transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
                 />
                 <motion.div
-                    className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-[#FDD023]/15 rounded-full blur-[100px]"
+                    className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-[#FFE566]/15 rounded-full blur-[100px]"
                     animate={{
                         x: [0, -80, 0],
                         y: [0, -60, 0],
@@ -179,13 +179,13 @@ export default function Home() {
                                     }
                                 }}
                             >
-                                <div className="absolute inset-0 bg-gradient-to-br from-[#461D7C] to-[#FDD023] rounded-2xl blur-xl opacity-60 animate-pulse" />
-                                <div className="relative w-16 h-16 bg-gradient-to-br from-[#461D7C] via-[#6B3FA0] to-[#FDD023] rounded-2xl flex items-center justify-center shadow-2xl shadow-[#461D7C]/30 border border-[#FDD023]/20">
-                                    <Brain className="w-9 h-9 text-[#FDD023]" />
+                                <div className="absolute inset-0 bg-gradient-to-br from-[#461D7C] to-[#FFE566] rounded-2xl blur-xl opacity-60 animate-pulse" />
+                                <div className="relative w-16 h-16 bg-gradient-to-br from-[#461D7C] via-[#6B3FA0] to-[#FFE566] rounded-2xl flex items-center justify-center shadow-2xl shadow-[#461D7C]/30 border border-[#FFE566]/20">
+                                    <Brain className="w-9 h-9 text-[#FFE566]" />
                                 </div>
                             </motion.div>
                             <motion.h1
-                                className="text-4xl font-bold text-[#FDD023] glow-gold"
+                                className="text-4xl font-bold text-[#FFE566] glow-gold"
                                 initial={{ opacity: 0, x: -20 }}
                                 animate={{ opacity: 1, x: 0 }}
                                 transition={{ delay: 0.3 }}
@@ -197,8 +197,8 @@ export default function Home() {
                         {/* Headline */}
                         <motion.div variants={itemVariants} className="mb-8">
                             <h2 className="text-5xl md:text-7xl font-bold leading-tight tracking-tight">
-                                <span className="block text-[#FDD023] glow-gold-subtle mb-3">AI That Finishes</span>
-                                <span className="bg-gradient-to-r from-[#461D7C] via-[#6B3FA0] to-[#FDD023] bg-clip-text text-transparent">
+                                <span className="block text-[#FFE566] glow-gold-subtle mb-3">AI That Finishes</span>
+                                <span className="bg-gradient-to-r from-[#461D7C] via-[#6B3FA0] to-[#FFE566] bg-clip-text text-transparent">
                                     Your Code
                                 </span>
                             </h2>
@@ -207,7 +207,7 @@ export default function Home() {
                         {/* Subheadline */}
                         <motion.p
                             variants={itemVariants}
-                            className="text-lg md:text-xl text-[#FDD023]/60 max-w-2xl mx-auto mb-10 leading-relaxed"
+                            className="text-lg md:text-xl text-[#FFE566]/60 max-w-2xl mx-auto mb-10 leading-relaxed"
                         >
                             Upload your project. Our AI analyzes it, creates a completion plan,
                             and implements missing features — all reviewable as clean diffs.
@@ -227,18 +227,18 @@ export default function Home() {
                                 >
                                     {/* Hover glow effect */}
                                     <motion.div
-                                        className="absolute inset-0 -m-2 bg-gradient-to-r from-[#461D7C]/0 to-[#FDD023]/0 rounded-xl blur-xl opacity-0 group-hover:from-[#461D7C]/20 group-hover:to-[#FDD023]/20 group-hover:opacity-100 transition-all duration-300"
+                                        className="absolute inset-0 -m-2 bg-gradient-to-r from-[#461D7C]/0 to-[#FFE566]/0 rounded-xl blur-xl opacity-0 group-hover:from-[#461D7C]/20 group-hover:to-[#FFE566]/20 group-hover:opacity-100 transition-all duration-300"
                                     />
                                     <div className="relative">
                                         <motion.div 
-                                            className="text-3xl md:text-4xl font-bold text-[#FDD023] group-hover:text-[#FFE566] transition-all duration-300"
+                                            className="text-3xl md:text-4xl font-bold text-[#FFE566] group-hover:text-[#FFE566] transition-all duration-300"
                                             initial={{ opacity: 0, scale: 0.5 }}
                                             animate={{ opacity: 1, scale: 1 }}
                                             transition={{ delay: 0.4 + idx * 0.1, type: "spring", bounce: 0.6 }}
                                         >
                                             {stat.value}
                                         </motion.div>
-                                        <div className="text-xs text-[#FDD023]/50 uppercase tracking-widest mt-2 font-medium group-hover:text-[#FDD023]/70 transition-colors">
+                                        <div className="text-xs text-[#FFE566]/50 uppercase tracking-widest mt-2 font-medium group-hover:text-[#FFE566]/70 transition-colors">
                                             {stat.label}
                                         </div>
                                     </div>
@@ -259,21 +259,21 @@ export default function Home() {
                                     transition={{ type: "spring", bounce: 0.4 }}
                                     className="group"
                                 >
-                                    <div className="relative h-full p-6 rounded-2xl bg-[#2D1250]/50 backdrop-blur-xl border border-[#461D7C]/50 hover:border-[#FDD023]/30 transition-all duration-300 overflow-hidden">
+                                    <div className="relative h-full p-6 rounded-2xl bg-[#2D1250]/50 backdrop-blur-xl border border-[#461D7C]/50 hover:border-[#FFE566]/30 transition-all duration-300 overflow-hidden">
                                         {/* Hover glow */}
-                                        <div className="absolute inset-0 bg-gradient-to-br from-[#461D7C]/20 to-[#FDD023]/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                                        <div className="absolute inset-0 bg-gradient-to-br from-[#461D7C]/20 to-[#FFE566]/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
                                         <div className="relative z-10">
                                             <motion.div
-                                                className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#461D7C]/30 to-[#FDD023]/20 flex items-center justify-center mb-4 mx-auto border border-[#461D7C]/30 group-hover:border-[#FDD023]/50 transition-colors"
+                                                className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#461D7C]/30 to-[#FFE566]/20 flex items-center justify-center mb-4 mx-auto border border-[#461D7C]/30 group-hover:border-[#FFE566]/50 transition-colors"
                                                 initial={{ scale: 0 }}
                                                 animate={{ scale: 1 }}
                                                 transition={{ delay: 0.5 + idx * 0.1, type: "spring", bounce: 0.6 }}
                                             >
-                                                <feature.icon className="w-6 h-6 text-[#FDD023] group-hover:text-[#FFE566] transition-colors" />
+                                                <feature.icon className="w-6 h-6 text-[#FFE566] group-hover:text-[#FFE566] transition-colors" />
                                             </motion.div>
-                                            <h3 className="font-semibold text-[#FDD023] mb-2 group-hover:text-[#FFE566] transition-colors glow-gold-subtle">{feature.title}</h3>
-                                            <p className="text-sm text-[#FDD023]/50 leading-relaxed">{feature.desc}</p>
+                                            <h3 className="font-semibold text-[#FFE566] mb-2 group-hover:text-[#FFE566] transition-colors glow-gold-subtle">{feature.title}</h3>
+                                            <p className="text-sm text-[#FFE566]/50 leading-relaxed">{feature.desc}</p>
                                         </div>
                                     </div>
                                 </motion.div>
@@ -291,7 +291,7 @@ export default function Home() {
                         <div className="relative">
                             {/* Glow effect behind card - LSU Purple & Gold */}
                             <motion.div 
-                                className="absolute -inset-2 bg-gradient-to-r from-[#461D7C]/40 via-[#6B3FA0]/30 to-[#FDD023]/30 rounded-[2rem] blur-2xl"
+                                className="absolute -inset-2 bg-gradient-to-r from-[#461D7C]/40 via-[#6B3FA0]/30 to-[#FFE566]/30 rounded-[2rem] blur-2xl"
                                 animate={{
                                     opacity: [0.3, 0.5, 0.3],
                                 }}
@@ -320,9 +320,9 @@ export default function Home() {
                                             repeatDelay: 3
                                         }}
                                     >
-                                        <Sparkles className="w-5 h-5 text-[#FDD023]" />
+                                        <Sparkles className="w-5 h-5 text-[#FFE566]" />
                                     </motion.div>
-                                    <span className="text-[#FDD023] font-medium glow-gold-subtle">Start Your Analysis</span>
+                                    <span className="text-[#FFE566] font-medium glow-gold-subtle">Start Your Analysis</span>
                                 </motion.div>
 
                                 {/* Error Message */}

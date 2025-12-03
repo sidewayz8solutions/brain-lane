@@ -146,13 +146,27 @@ button:focus-visible {
   }
 }
 
-/* LSU Gold Glow Effect */
+/* LSU Gold Glow Effect with black stroke for readability */
 .glow-gold {
-  text-shadow: 0 0 10px #FDD023, 0 0 20px #FDD023, 0 0 30px #FDD023, 0 0 40px #D4A800;
+  text-shadow: 
+    -2px -2px 0 #000,
+    2px -2px 0 #000,
+    -2px 2px 0 #000,
+    2px 2px 0 #000,
+    0 0 10px #FFE566,
+    0 0 20px #FFE566,
+    0 0 30px #FFE566,
+    0 0 40px #FDD023;
 }
 
 .glow-gold-subtle {
-  text-shadow: 0 0 5px rgba(253, 208, 35, 0.5), 0 0 10px rgba(253, 208, 35, 0.3);
+  text-shadow: 
+    -1px -1px 0 #000,
+    1px -1px 0 #000,
+    -1px 1px 0 #000,
+    1px 1px 0 #000,
+    0 0 5px rgba(255, 229, 102, 0.5),
+    0 0 10px rgba(253, 208, 35, 0.3);
 }
 
 /* LSU Purple Glow Effect */

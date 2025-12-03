@@ -329,7 +329,7 @@ export default function ProjectAnalysis() {
             {/* Background - LSU Purple */}
             <div className="fixed inset-0 overflow-hidden pointer-events-none">
                 <div className="absolute top-0 left-1/4 w-96 h-96 bg-[#461D7C]/30 rounded-full blur-3xl" />
-                <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-[#FDD023]/10 rounded-full blur-3xl" />
+                <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-[#FFE566]/10 rounded-full blur-3xl" />
                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-[#461D7C]/20 rounded-full blur-[100px]" />
             </div>
 
@@ -338,12 +338,12 @@ export default function ProjectAnalysis() {
                 <div className="flex items-center justify-between mb-8">
                     <div className="flex items-center gap-4">
                         <Link to={createPageUrl('Home')}>
-                            <Button variant="ghost" size="icon" className="text-[#FDD023]/70 hover:text-[#FDD023]">
+                            <Button variant="ghost" size="icon" className="text-[#FFE566]/70 hover:text-[#FFE566]">
                                 <ArrowLeft className="w-5 h-5" />
                             </Button>
                         </Link>
                         <div>
-                            <h1 className="text-2xl font-bold text-[#FDD023] glow-gold-subtle">{project.name}</h1>
+                            <h1 className="text-2xl font-bold text-[#FFE566] glow-gold-subtle">{project.name}</h1>
                             <div className="flex items-center gap-3 mt-2">
                                 <StatusBadge status={project.status} />
                                 {Array.isArray(project.detected_stack) ? (
@@ -367,14 +367,14 @@ export default function ProjectAnalysis() {
                     {isReady && (
                         <div className="flex items-center gap-2">
                             <Link to={createPageUrl('ProjectHealth') + `?id=${project.id}`}>
-                                <Button variant="outline" className="border-[#461D7C] text-[#FDD023] hover:bg-[#461D7C]/30">
+                                <Button variant="outline" className="border-[#461D7C] text-[#FFE566] hover:bg-[#461D7C]/30">
                                     <Flame className="w-4 h-4 mr-2" />
                                     Health Dashboard
                                 </Button>
                             </Link>
                             {tasks.length > 0 && (
                                 <Link to={createPageUrl('TaskView') + `?projectId=${project.id}`}>
-                                    <Button className="bg-gradient-to-r from-[#461D7C] to-[#6B3FA0] hover:from-[#5a2599] hover:to-[#7c4cb3] text-[#FDD023]">
+                                    <Button className="bg-gradient-to-r from-[#461D7C] to-[#6B3FA0] hover:from-[#5a2599] hover:to-[#7c4cb3] text-[#FFE566]">
                                         <Sparkles className="w-4 h-4 mr-2" />
                                         View Tasks ({tasks.length})
                                     </Button>
@@ -392,16 +392,16 @@ export default function ProjectAnalysis() {
                         className="bg-[#2D1250]/80 backdrop-blur-xl rounded-2xl border border-[#461D7C]/50 p-12 text-center"
                     >
                         <div className="w-20 h-20 mx-auto mb-6 relative">
-                            <div className="absolute inset-0 bg-[#FDD023]/20 rounded-full animate-ping" />
+                            <div className="absolute inset-0 bg-[#FFE566]/20 rounded-full animate-ping" />
                             <div className="relative w-full h-full bg-gradient-to-br from-[#461D7C] to-[#6B3FA0] rounded-full flex items-center justify-center">
-                                <Brain className="w-10 h-10 text-[#FDD023]" />
+                                <Brain className="w-10 h-10 text-[#FFE566]" />
                             </div>
                         </div>
-                        <h2 className="text-xl font-semibold mb-2 text-[#FDD023]">Analyzing Your Project</h2>
-                        <p className="text-[#FDD023]/60 mb-6">
+                        <h2 className="text-xl font-semibold mb-2 text-[#FFE566]">Analyzing Your Project</h2>
+                        <p className="text-[#FFE566]/60 mb-6">
                             Our AI is scanning your codebase, detecting the stack, and creating a completion plan...
                         </p>
-                        <div className="flex items-center justify-center gap-2 text-sm text-[#FDD023]/40">
+                        <div className="flex items-center justify-center gap-2 text-sm text-[#FFE566]/40">
                             <Loader2 className="w-4 h-4 animate-spin" />
                             This usually takes 15-30 seconds
                         </div>
