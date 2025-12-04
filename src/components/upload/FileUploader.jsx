@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback } from 'react';
 import PropTypes from 'prop-types';
-import { Upload, FileArchive, Github, X, CheckCircle, AlertCircle, Sparkles } from 'lucide-react';
+import { Upload, FileArchive, Github, X, CheckCircle, AlertCircle, Sparkles, Brain } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence, useMotionValue, useSpring } from 'framer-motion';
 import AnimatedButton from '../ui/AnimatedButton';
@@ -148,6 +148,44 @@ export default function FileUploader({ onUpload, isUploading }) {
 
     return (
         <div className="w-full max-w-2xl mx-auto">
+            {/* Logo Header */}
+            <motion.div
+                className="flex items-center justify-center gap-3 mb-8"
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
+            >
+                <motion.div
+                    className="relative"
+                    whileHover={{ scale: 1.1, rotate: 5 }}
+                    animate={{ 
+                        y: [0, -8, 0],
+                    }}
+                    transition={{ 
+                        type: "spring", 
+                        bounce: 0.6,
+                        y: {
+                            duration: 3,
+                            repeat: Infinity,
+                            ease: "easeInOut"
+                        }
+                    }}
+                >
+                    <div className="absolute inset-0 rounded-xl opacity-80 metallic-purple-bg blur-sm" />
+                    <div className="relative w-12 h-12 rounded-xl flex items-center justify-center shadow-2xl metallic-purple-border metallic-gold-bg">
+                        <Brain className="w-7 h-7 text-[#461D7C]" />
+                    </div>
+                </motion.div>
+                <motion.h2
+                    className="text-2xl font-bold text-[#FFE566] glow-metallic-gold"
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.2 }}
+                >
+                    Brain Lane
+                </motion.h2>
+            </motion.div>
+
             {/* Mode Toggle - Vibrant Multi-color Theme */}
             <div className="flex gap-2 mb-6 p-1.5 bg-slate-900/60 rounded-2xl backdrop-blur-sm border border-slate-700/30">
                 {['zip', 'github'].map((mode) => (

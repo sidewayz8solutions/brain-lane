@@ -79,10 +79,10 @@ export default function Home() {
     };
 
     const features = [
-        { icon: Brain, title: 'AI Code Analysis', desc: 'Detects your stack and finds issues automatically', color: 'cyan' },
-        { icon: Zap, title: 'Smart Task Generation', desc: 'Creates actionable tasks to complete your project', color: 'purple' },
-        { icon: GitBranch, title: 'Clean Diffs', desc: 'Review and approve changes like pull requests', color: 'green' },
-        { icon: CheckCircle, title: 'One-Click Apply', desc: 'Download patches or export modified code', color: 'orange' },
+        { icon: Brain, title: 'AI Code Analysis', desc: 'Detects your stack and finds issues automatically', color: 'purple' },
+        { icon: Zap, title: 'Smart Task Generation', desc: 'Creates actionable tasks to complete your project', color: 'gold' },
+        { icon: GitBranch, title: 'Clean Diffs', desc: 'Review and approve changes like pull requests', color: 'purple' },
+        { icon: CheckCircle, title: 'One-Click Apply', desc: 'Download patches or export modified code', color: 'gold' },
     ];
 
     // Vibrant color classes matching ProjectHealth dashboard
@@ -260,7 +260,7 @@ export default function Home() {
                             className="flex items-center justify-center gap-12 mb-14"
                         >
                             {stats.map((stat, idx) => {
-                                const statColors = ['text-cyan-400', 'text-green-400', 'text-purple-400'];
+                                const statColors = ['text-[#FFE566]', 'text-[#6B3FA0]', 'text-[#FFE566]'];
                                 return (
                                     <motion.div
                                         key={idx}
@@ -270,7 +270,7 @@ export default function Home() {
                                     >
                                         {/* Hover glow effect */}
                                         <motion.div
-                                            className="absolute inset-0 -m-2 bg-gradient-to-r from-cyan-500/0 to-purple-500/0 rounded-xl blur-xl opacity-0 group-hover:from-cyan-500/20 group-hover:to-purple-500/20 group-hover:opacity-100 transition-all duration-300"
+                                            className="absolute inset-0 -m-2 bg-gradient-to-r from-[#461D7C]/0 to-[#FFE566]/0 rounded-xl blur-xl opacity-0 group-hover:from-[#461D7C]/20 group-hover:to-[#FFE566]/20 group-hover:opacity-100 transition-all duration-300"
                                         />
                                         <div className="relative">
                                             <motion.div 
@@ -397,7 +397,7 @@ export default function Home() {
                         className="mt-28 text-center"
                     >
                         <motion.h3
-                            className="text-sm font-semibold text-cyan-400/80 uppercase tracking-[0.2em] mb-12"
+                            className="text-sm font-semibold text-[#FFE566]/80 uppercase tracking-[0.2em] mb-12"
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 1 }}
@@ -407,16 +407,14 @@ export default function Home() {
 
                         <div className="flex items-center justify-center gap-6 md:gap-10 flex-wrap max-w-5xl mx-auto">
                             {[
-                                { step: 'Upload Project', icon: Rocket, num: '01', color: 'cyan' },
-                                { step: 'AI Analyzes', icon: Cpu, num: '02', color: 'purple' },
-                                { step: 'Review Tasks', icon: Code2, num: '03', color: 'green' },
-                                { step: 'Apply Changes', icon: Shield, num: '04', color: 'orange' },
+                                { step: 'Upload Project', icon: Rocket, num: '01', color: 'purple' },
+                                { step: 'AI Analyzes', icon: Cpu, num: '02', color: 'gold' },
+                                { step: 'Review Tasks', icon: Code2, num: '03', color: 'purple' },
+                                { step: 'Apply Changes', icon: Shield, num: '04', color: 'gold' },
                             ].map((item, idx) => {
                                 const stepColors = {
-                                    cyan: { icon: 'text-cyan-400', border: 'border-cyan-500/50', bg: 'from-cyan-500/30 to-cyan-500/10', num: 'text-cyan-400' },
-                                    purple: { icon: 'text-purple-400', border: 'border-purple-500/50', bg: 'from-purple-500/30 to-purple-500/10', num: 'text-purple-400' },
-                                    green: { icon: 'text-green-400', border: 'border-green-500/50', bg: 'from-green-500/30 to-green-500/10', num: 'text-green-400' },
-                                    orange: { icon: 'text-orange-400', border: 'border-orange-500/50', bg: 'from-orange-500/30 to-orange-500/10', num: 'text-orange-400' }
+                                    purple: { icon: 'text-[#6B3FA0]', border: 'border-[#461D7C]/50', bg: 'from-[#461D7C]/30 to-[#461D7C]/10', num: 'text-[#6B3FA0]' },
+                                    gold: { icon: 'text-[#FFE566]', border: 'border-[#FFE566]/50', bg: 'from-[#FFE566]/30 to-[#FFE566]/10', num: 'text-[#FFE566]' }
                                 };
                                 const colors = stepColors[item.color];
                                 return (
@@ -449,9 +447,7 @@ export default function Home() {
                                                 className="hidden md:flex items-center"
                                             >
                                                 <div className={`w-12 h-[2px] bg-gradient-to-r ${
-                                                    idx === 0 ? 'from-cyan-500/50 to-purple-500/50' :
-                                                    idx === 1 ? 'from-purple-500/50 to-green-500/50' :
-                                                    'from-green-500/50 to-orange-500/50'
+                                                    idx % 2 === 0 ? 'from-[#461D7C]/50 to-[#FFE566]/50' : 'from-[#FFE566]/50 to-[#461D7C]/50'
                                                 }`} />
                                             </motion.div>
                                         )}
@@ -493,7 +489,7 @@ export default function Home() {
                                     className="text-center space-y-2 group"
                                     whileHover={{ scale: 1.05 }}
                                 >
-                                    <Shield className="w-8 h-8 text-green-400 mx-auto group-hover:text-green-300 transition-colors" />
+                                    <Shield className="w-8 h-8 text-[#6B3FA0] mx-auto group-hover:text-[#8B5FC0] transition-colors" />
                                     <p className="text-slate-400 text-sm">Code Never Stored</p>
                                 </motion.div>
 
@@ -501,7 +497,7 @@ export default function Home() {
                                     className="text-center space-y-2 group"
                                     whileHover={{ scale: 1.05 }}
                                 >
-                                    <Zap className="w-8 h-8 text-cyan-400 mx-auto group-hover:text-cyan-300 transition-colors" />
+                                    <Zap className="w-8 h-8 text-[#FFE566] mx-auto group-hover:text-[#FFED9A] transition-colors" />
                                     <p className="text-slate-400 text-sm">Lightning Fast</p>
                                 </motion.div>
                             </div>
