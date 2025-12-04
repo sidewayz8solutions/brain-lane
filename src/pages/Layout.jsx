@@ -4,6 +4,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { Brain, FolderGit2, Home, Menu, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import Logo from '../components/ui/Logo';
 
 export default function Layout({ children, currentPageName }) {
     const [scrolled, setScrolled] = useState(false);
@@ -45,25 +46,8 @@ export default function Layout({ children, currentPageName }) {
                         }`}
                     >
                         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-                            <Link to={createPageUrl('Home')} className="flex items-center gap-3 group">
-                                <motion.div 
-                                    className="relative"
-                                    whileHover={{ scale: 1.1, rotate: 5 }}
-                                    whileTap={{ scale: 0.95 }}
-                                >
-                                    <div className="absolute inset-0 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-lg blur opacity-50 group-hover:opacity-75 transition-opacity" />
-                                    <div className="relative w-9 h-9 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-lg flex items-center justify-center">
-                                        <Brain className="w-5 h-5 text-white" />
-                                    </div>
-                                </motion.div>
-                                <motion.span 
-                                    className="font-bold text-white text-lg"
-                                    initial={{ opacity: 0, x: -10 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    transition={{ delay: 0.1 }}
-                                >
-                                    Brain Lane
-                                </motion.span>
+                            <Link to={createPageUrl('Home')} className="group">
+                                <Logo size="sm" showSlogan={false} animate={false} className="scale-90 group-hover:scale-100 transition-transform" />
                             </Link>
 
                             {/* Desktop Navigation */}

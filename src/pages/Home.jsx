@@ -4,6 +4,8 @@ import { motion } from 'framer-motion';
 import { Sparkles, Zap, GitBranch, CheckCircle, Brain, Code2, Cpu, Shield, Rocket, Star, AlertCircle, Activity, TrendingUp, Clock, Target } from 'lucide-react';
 import FileUploader from '../components/upload/FileUploader';
 import FloatingParticles from '../components/ui/FloatingParticles';
+import Logo from '../components/ui/Logo';
+import Footer from '../components/ui/Footer';
 import { createPageUrl } from '@/utils';
 import { useProjectStore } from '@/store/projectStore';
 import { UploadFile, ExtractZipContents, AnalyzeProjectStructure } from '@/api/integrations';
@@ -199,40 +201,9 @@ export default function Home() {
                         animate="visible"
                         className="text-center"
                     >
-                        {/* Logo */}
-                        <motion.div
-                            variants={itemVariants}
-                            className="flex items-center justify-center gap-4 mb-12"
-                        >
-                            <motion.div
-                                className="relative"
-                                whileHover={{ scale: 1.1, rotate: 5 }}
-                                animate={{ 
-                                    y: [0, -10, 0],
-                                }}
-                                transition={{ 
-                                    type: "spring", 
-                                    bounce: 0.6,
-                                    y: {
-                                        duration: 3,
-                                        repeat: Infinity,
-                                        ease: "easeInOut"
-                                    }
-                                }}
-                            >
-                                <div className="absolute inset-0 rounded-2xl opacity-80 metallic-purple-bg" />
-                                <div className="relative w-16 h-16 rounded-2xl flex items-center justify-center shadow-2xl metallic-purple-border metallic-gold-bg">
-                                    <Brain className="w-9 h-9 text-[#461D7C]" />
-                                </div>
-                            </motion.div>
-                            <motion.h1
-                                className="text-4xl font-bold text-[#FFE566] glow-metallic-gold"
-                                initial={{ opacity: 0, x: -20 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                transition={{ delay: 0.3 }}
-                            >
-                                Brain Lane
-                            </motion.h1>
+                        {/* Logo with Slogan */}
+                        <motion.div variants={itemVariants} className="mb-12">
+                            <Logo size="lg" showSlogan={true} animate={true} />
                         </motion.div>
 
                         {/* Headline */}
@@ -508,6 +479,9 @@ export default function Home() {
                     <div className="h-24" />
                 </div>
             </div>
+
+            {/* Footer */}
+            <Footer />
         </div>
     );
 }
