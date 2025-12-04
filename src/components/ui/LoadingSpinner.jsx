@@ -2,6 +2,33 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { cn } from "@/lib/utils";
 
+// Simple circular spinner
+export function SimpleSpinner({ size = 'default', className }) {
+    const sizes = {
+        sm: 'w-6 h-6 border-2',
+        default: 'w-8 h-8 border-2',
+        lg: 'w-12 h-12 border-3',
+        xl: 'w-16 h-16 border-4',
+    };
+
+    return (
+        <div className={cn("relative", className)}>
+            <motion.div
+                className={cn(
+                    "rounded-full border-cyan-500/30 border-t-cyan-400",
+                    sizes[size]
+                )}
+                animate={{ rotate: 360 }}
+                transition={{
+                    duration: 0.8,
+                    repeat: Infinity,
+                    ease: "linear"
+                }}
+            />
+        </div>
+    );
+}
+
 // Orbital spinner with multiple rings
 export function OrbitalSpinner({ size = 'default', className }) {
     const sizes = {
