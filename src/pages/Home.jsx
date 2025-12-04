@@ -1,11 +1,12 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Sparkles, Zap, GitBranch, CheckCircle, Brain, Code2, Cpu, Shield, Rocket, Star, AlertCircle, Activity, TrendingUp, Clock, Target } from 'lucide-react';
+import { Sparkles, Zap, GitBranch, CheckCircle, Brain, Code2, Cpu, Shield, Rocket, Star, AlertCircle, Activity, TrendingUp, Clock, Target, Home as HomeIcon, FolderGit2 } from 'lucide-react';
 import FileUploader from '../components/upload/FileUploader';
 import FloatingParticles from '../components/ui/FloatingParticles';
 import Logo from '../components/ui/Logo';
 import Footer from '../components/ui/Footer';
+import CustomCursor from '../components/ui/CustomCursor';
 import { createPageUrl } from '@/utils';
 import { useProjectStore } from '@/store/projectStore';
 import { UploadFile, ExtractZipContents, AnalyzeProjectStructure } from '@/api/integrations';
@@ -147,7 +148,46 @@ export default function Home() {
     };
 
     return (
-        <div className="min-h-screen bg-slate-950 text-white overflow-x-hidden relative">
+        <div className="min-h-screen bg-slate-950 text-white overflow-x-hidden relative" style={{ cursor: 'none' }}>
+            {/* Custom Cursor */}
+            <CustomCursor />
+
+            {/* Navigation */}
+            <nav className="fixed top-0 left-0 right-0 z-50 bg-slate-950/80 backdrop-blur-xl border-b border-slate-800/50">
+                <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+                    <Link to={createPageUrl('Home')} className="flex items-center gap-2 group">
+                        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#FFE566] to-[#FFC947] flex items-center justify-center">
+                            <Brain className="w-5 h-5 text-[#461D7C]" />
+                        </div>
+                        <span className="font-bold text-[#FFE566] text-lg">Brain Lane</span>
+                    </Link>
+                    
+                    <div className="flex items-center gap-1">
+                        <Link 
+                            to={createPageUrl('Home')}
+                            className="px-4 py-2 rounded-lg text-sm text-[#FFE566] hover:bg-[#FFE566]/10 transition-colors flex items-center gap-2"
+                        >
+                            <HomeIcon className="w-4 h-4" />
+                            Home
+                        </Link>
+                        <Link 
+                            to={createPageUrl('Projects')}
+                            className="px-4 py-2 rounded-lg text-sm text-slate-400 hover:text-[#FFE566] hover:bg-[#FFE566]/10 transition-colors flex items-center gap-2"
+                        >
+                            <FolderGit2 className="w-4 h-4" />
+                            Projects
+                        </Link>
+                        <Link 
+                            to={createPageUrl('ProjectHealth')}
+                            className="px-4 py-2 rounded-lg text-sm text-slate-400 hover:text-[#FFE566] hover:bg-[#FFE566]/10 transition-colors flex items-center gap-2"
+                        >
+                            <Brain className="w-4 h-4" />
+                            Health
+                        </Link>
+                    </div>
+                </div>
+            </nav>
+
             {/* Animated Background - Vibrant Multi-color Theme */}
             <div className="fixed inset-0 overflow-hidden pointer-events-none">
                     {/* Gradient orbs - Metallic Purple & Gold Theme */}
@@ -195,37 +235,23 @@ export default function Home() {
             <div className="relative z-10">
                 {/* Hero Section - Logo Only */}
                 <div className="max-w-6xl mx-auto px-6 pt-32 pb-20">
-                    <motion.div
-                        initial={{ opacity: 0, scale: 0.9, y: 30 }}
-                        animate={{ opacity: 1, scale: 1, y: 0 }}
-                        transition={{ duration: 0.8, ease: [0.25, 0.46, 0.45, 0.94] }}
-                        className="text-center"
-                    >
-                        {/* Your Logo Image */}
-                        <motion.div 
-                            className="relative inline-block"
-                            animate={{ 
-                                y: [0, -15, 0],
-                            }}
-                            transition={{ 
-                                duration: 4,
-                                repeat: Infinity,
-                                ease: "easeInOut"
-                            }}
-                        >
-                            {/* Glow effect behind logo */}
-                            <div className="absolute inset-0 bg-gradient-to-br from-[#FFE566]/30 via-[#FFC947]/20 to-[#461D7C]/30 rounded-full blur-3xl scale-150" />
+                    <div className="text-center">
+                        {/* Your Logo Image with Glowing Frame */}
+                        <div className="relative inline-block">
+                            {/* Glowing Frame */}
+                            <div className="absolute -inset-4 rounded-3xl bg-gradient-to-r from-[#FFE566] via-[#FFC947] to-[#461D7C] opacity-75 blur-xl animate-pulse" />
+                            <div className="absolute -inset-2 rounded-2xl bg-gradient-to-r from-[#FFE566] via-[#FFC947] to-[#461D7C] opacity-90" />
                             
-                            {/* Logo Image */}
-                            <motion.img
-                                src="/logo.png"
-                                alt="Brain Lane - Discover the Path to Your Peace of Mind"
-                                className="relative w-full max-w-2xl mx-auto drop-shadow-2xl"
-                                whileHover={{ scale: 1.05, rotate: 2 }}
-                                transition={{ type: "spring", bounce: 0.4 }}
-                            />
-                        </motion.div>
-                    </motion.div>
+                            {/* Logo Container */}
+                            <div className="relative bg-slate-950 rounded-2xl p-4">
+                                <img
+                                    src="/logo.png"
+                                    alt="Brain Lane - Discover the Path to Your Peace of Mind"
+                                    className="relative w-full max-w-2xl mx-auto drop-shadow-2xl"
+                                />
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 {/* Features Grid - Vibrant Glassmorphism Cards */}
