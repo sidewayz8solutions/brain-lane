@@ -149,10 +149,28 @@ export default function FileUploader({ onUpload, isUploading }) {
 
     return (
         <div className="w-full max-w-2xl mx-auto">
-            {/* Logo with Slogan */}
-            <div className="mb-8">
-                <Logo size="md" showSlogan={true} animate={true} />
-            </div>
+            {/* Logo Image */}
+            <motion.div 
+                className="mb-8 flex justify-center"
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6 }}
+            >
+                <motion.img
+                    src="/logo.png"
+                    alt="Brain Lane - Discover the Path to Your Peace of Mind"
+                    className="w-full max-w-md drop-shadow-2xl"
+                    animate={{ 
+                        y: [0, -10, 0],
+                    }}
+                    transition={{ 
+                        duration: 3,
+                        repeat: Infinity,
+                        ease: "easeInOut"
+                    }}
+                    whileHover={{ scale: 1.05 }}
+                />
+            </motion.div>
 
             {/* Mode Toggle - Vibrant Multi-color Theme */}
             <div className="flex gap-2 mb-6 p-1.5 bg-slate-900/60 rounded-2xl backdrop-blur-sm border border-slate-700/30">

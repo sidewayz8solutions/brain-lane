@@ -19,8 +19,12 @@ export default function Footer() {
                 <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 mb-8">
                     {/* Logo & Slogan */}
                     <div className="lg:col-span-2">
-                        <Logo size="md" showSlogan={true} animate={false} className="mb-4" />
-                        <p className="text-slate-400 text-sm max-w-md mt-6">
+                        <img
+                            src="/logo.png"
+                            alt="Brain Lane - Discover the Path to Your Peace of Mind"
+                            className="w-full max-w-xs mb-4 drop-shadow-xl"
+                        />
+                        <p className="text-slate-400 text-sm max-w-md">
                             AI-powered code analysis that helps you achieve clarity, 
                             quality, and confidence in your projects.
                         </p>

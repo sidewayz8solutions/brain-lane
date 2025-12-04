@@ -193,113 +193,85 @@ export default function Home() {
             </div>
 
             <div className="relative z-10">
-                {/* Hero Section */}
-                <div className="max-w-6xl mx-auto px-6 pt-20 pb-12">
+                {/* Hero Section - Logo Only */}
+                <div className="max-w-6xl mx-auto px-6 pt-32 pb-20">
                     <motion.div
-                        variants={containerVariants}
-                        initial="hidden"
-                        animate="visible"
+                        initial={{ opacity: 0, scale: 0.9, y: 30 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        transition={{ duration: 0.8, ease: [0.25, 0.46, 0.45, 0.94] }}
                         className="text-center"
                     >
-                        {/* Logo with Slogan */}
-                        <motion.div variants={itemVariants} className="mb-12">
-                            <Logo size="lg" showSlogan={true} animate={true} />
-                        </motion.div>
-
-                        {/* Headline */}
-                        <motion.div variants={itemVariants} className="mb-8">
-                            <h2 className="text-5xl md:text-7xl font-bold leading-tight tracking-tight">
-                                <span className="block text-[#FFE566] glow-metallic-gold mb-3">AI That Finishes</span>
-                                <span className="bg-gradient-to-r from-[#461D7C] via-[#6B3FA0] to-[#FFE566] bg-clip-text text-transparent">
-                                    Your Code
-                                </span>
-                            </h2>
-                        </motion.div>
-
-                        {/* Subheadline */}
-                        <motion.p
-                            variants={itemVariants}
-                            className="text-lg md:text-xl text-slate-400 max-w-2xl mx-auto mb-10 leading-relaxed"
+                        {/* Your Logo Image */}
+                        <motion.div 
+                            className="relative inline-block"
+                            animate={{ 
+                                y: [0, -15, 0],
+                            }}
+                            transition={{ 
+                                duration: 4,
+                                repeat: Infinity,
+                                ease: "easeInOut"
+                            }}
                         >
-                            Upload your project. Our AI analyzes it, creates a completion plan,
-                            and implements missing features — all reviewable as clean diffs.
-                        </motion.p>
-
-                        {/* Stats row */}
-                        <motion.div
-                            variants={itemVariants}
-                            className="flex items-center justify-center gap-12 mb-14"
-                        >
-                            {stats.map((stat, idx) => {
-                                const statColors = ['text-[#FFE566]', 'text-[#6B3FA0]', 'text-[#FFE566]'];
-                                return (
-                                    <motion.div
-                                        key={idx}
-                                        className="text-center group relative"
-                                        whileHover={{ scale: 1.1, y: -5 }}
-                                        transition={{ type: "spring", bounce: 0.4 }}
-                                    >
-                                        {/* Hover glow effect */}
-                                        <motion.div
-                                            className="absolute inset-0 -m-2 bg-gradient-to-r from-[#461D7C]/0 to-[#FFE566]/0 rounded-xl blur-xl opacity-0 group-hover:from-[#461D7C]/20 group-hover:to-[#FFE566]/20 group-hover:opacity-100 transition-all duration-300"
-                                        />
-                                        <div className="relative">
-                                            <motion.div 
-                                                className={`text-3xl md:text-4xl font-bold ${statColors[idx]} transition-all duration-300`}
-                                                initial={{ opacity: 0, scale: 0.5 }}
-                                                animate={{ opacity: 1, scale: 1 }}
-                                                transition={{ delay: 0.4 + idx * 0.1, type: "spring", bounce: 0.6 }}
-                                            >
-                                                {stat.value}
-                                            </motion.div>
-                                            <div className="text-xs text-slate-500 uppercase tracking-widest mt-2 font-medium group-hover:text-slate-400 transition-colors">
-                                                {stat.label}
-                                            </div>
-                                        </div>
-                                    </motion.div>
-                                );
-                            })}
-                        </motion.div>
-
-                        {/* Features Grid - Vibrant Glassmorphism Cards */}
-                        <motion.div
-                            variants={containerVariants}
-                            className="grid grid-cols-2 md:grid-cols-4 gap-5 max-w-5xl mx-auto mb-20"
-                        >
-                            {features.map((feature, idx) => {
-                                const colors = colorClasses[feature.color];
-                                return (
-                                    <motion.div
-                                        key={idx}
-                                        variants={itemVariants}
-                                        whileHover={{ y: -8, scale: 1.03 }}
-                                        transition={{ type: "spring", bounce: 0.4 }}
-                                        className="group"
-                                    >
-                                        <div className={`relative h-full p-6 rounded-2xl bg-gradient-to-br ${colors.bg} backdrop-blur-xl border ${colors.border} transition-all duration-300 overflow-hidden group-hover:shadow-lg ${colors.glow}`}>
-                                            {/* Animated corner accent */}
-                                            <div className={`absolute top-0 right-0 w-20 h-20 bg-gradient-to-br ${colors.bg} rounded-bl-full opacity-50 group-hover:opacity-100 transition-opacity`} />
-
-                                            <div className="relative z-10">
-                                                <motion.div
-                                                    className={`w-12 h-12 rounded-xl bg-gradient-to-br ${colors.bg} flex items-center justify-center mb-4 mx-auto border ${colors.border} transition-all duration-300`}
-                                                    initial={{ scale: 0 }}
-                                                    animate={{ scale: 1 }}
-                                                    transition={{ delay: 0.5 + idx * 0.1, type: "spring", bounce: 0.6 }}
-                                                >
-                                                    <feature.icon className={`w-6 h-6 ${colors.icon}`} />
-                                                </motion.div>
-                                                <h3 className={`font-semibold ${colors.icon} mb-2 transition-colors`}>{feature.title}</h3>
-                                                <p className="text-sm text-slate-400 leading-relaxed">{feature.desc}</p>
-                                            </div>
-                                        </div>
-                                    </motion.div>
-                                );
-                            })}
+                            {/* Glow effect behind logo */}
+                            <div className="absolute inset-0 bg-gradient-to-br from-[#FFE566]/30 via-[#FFC947]/20 to-[#461D7C]/30 rounded-full blur-3xl scale-150" />
+                            
+                            {/* Logo Image */}
+                            <motion.img
+                                src="/logo.png"
+                                alt="Brain Lane - Discover the Path to Your Peace of Mind"
+                                className="relative w-full max-w-2xl mx-auto drop-shadow-2xl"
+                                whileHover={{ scale: 1.05, rotate: 2 }}
+                                transition={{ type: "spring", bounce: 0.4 }}
+                            />
                         </motion.div>
                     </motion.div>
+                </div>
 
-                    {/* Upload Section - Vibrant Multi-color */}
+                {/* Features Grid - Vibrant Glassmorphism Cards */}
+                <div className="max-w-5xl mx-auto px-6 mb-20">
+                    <motion.div
+                        initial={{ opacity: 0, y: 40 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.5, duration: 0.6 }}
+                        className="grid grid-cols-2 md:grid-cols-4 gap-5"
+                    >
+                        {features.map((feature, idx) => {
+                            const colors = colorClasses[feature.color];
+                            return (
+                                <motion.div
+                                    key={idx}
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: 0.6 + idx * 0.1 }}
+                                    whileHover={{ y: -8, scale: 1.03 }}
+                                    className="group"
+                                >
+                                    <div className={`relative h-full p-6 rounded-2xl bg-gradient-to-br ${colors.bg} backdrop-blur-xl border ${colors.border} transition-all duration-300 overflow-hidden group-hover:shadow-lg ${colors.glow}`}>
+                                        {/* Animated corner accent */}
+                                        <div className={`absolute top-0 right-0 w-20 h-20 bg-gradient-to-br ${colors.bg} rounded-bl-full opacity-50 group-hover:opacity-100 transition-opacity`} />
+
+                                        <div className="relative z-10">
+                                            <motion.div
+                                                className={`w-12 h-12 rounded-xl bg-gradient-to-br ${colors.bg} flex items-center justify-center mb-4 mx-auto border ${colors.border} transition-all duration-300`}
+                                                initial={{ scale: 0 }}
+                                                animate={{ scale: 1 }}
+                                                transition={{ delay: 0.7 + idx * 0.1, type: "spring", bounce: 0.6 }}
+                                            >
+                                                <feature.icon className={`w-6 h-6 ${colors.icon}`} />
+                                            </motion.div>
+                                            <h3 className={`font-semibold ${colors.icon} mb-2 transition-colors`}>{feature.title}</h3>
+                                            <p className="text-sm text-slate-400 leading-relaxed">{feature.desc}</p>
+                                        </div>
+                                    </div>
+                                </motion.div>
+                            );
+                        })}
+                    </motion.div>
+                </div>
+
+                {/* Upload Section - Vibrant Multi-color */}
+                <div className="max-w-2xl mx-auto px-6">
                     <motion.div
                         initial={{ opacity: 0, y: 40, scale: 0.95 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
