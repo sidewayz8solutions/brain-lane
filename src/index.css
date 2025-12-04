@@ -2,13 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Custom cursor styles - hide default cursor on desktop */
-@media (pointer: fine) {
-  * {
-    cursor: none !important;
-  }
-}
-
 /* :root {
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
