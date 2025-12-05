@@ -91,7 +91,10 @@ const getMockResponse = (prompt, context) => {
 };
 
 export const InvokeLLM = async ({ prompt, response_json_schema, add_context_from_internet }) => {
+  console.log('🧠 InvokeLLM called, demoMode:', AI_CONFIG.demoMode);
+  
   if (AI_CONFIG.demoMode) {
+    console.log('⚠️ Running in DEMO mode - no API key configured');
     // Simulate API delay
     await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 2000));
     return getMockResponse(prompt, { add_context_from_internet });
@@ -100,60 +103,69 @@ export const InvokeLLM = async ({ prompt, response_json_schema, add_context_from
   // Real API call to OpenAI
   try {
     console.log('🚀 Making real OpenAI API call...');
+    console.log('📦 Prompt length:', prompt.length, 'chars');
+    
+    const requestBody = {
+      model: AI_CONFIG.model,
+      messages: [
+        { 
+          role: 'system', 
+          content: 'You are a senior software architect. Always respond with valid JSON matching the requested schema exactly. Analyze the actual code provided - do not use placeholder or example data. Be specific about the files and issues you find.' 
+        },
+        { role: 'user', content: prompt }
+      ],
+      response_format: response_json_schema ? { type: 'json_object' } : undefined,
+      max_tokens: 4000,
+      temperature: 0.3, // Lower temperature for more consistent structured output
+    };
+    
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${AI_CONFIG.apiKey}`,
       },
-      body: JSON.stringify({
-        model: AI_CONFIG.model,
-        messages: [
-          { 
-            role: 'system', 
-            content: 'You are a senior software architect. Always respond with valid JSON. Keep responses concise but comprehensive.' 
-          },
-          { role: 'user', content: prompt }
-        ],
-        response_format: response_json_schema ? { type: 'json_object' } : undefined,
-        max_tokens: 4000, // Ensure complete response
-        temperature: 0.7,
-      }),
+      body: JSON.stringify(requestBody),
     });
     
     if (!response.ok) {
-      const errorData = await response.json();
+      const errorData = await response.json().catch(() => ({}));
       console.error('❌ OpenAI API Error:', response.status, errorData);
-      throw new Error(`OpenAI API Error: ${response.status} - ${errorData.error?.message || 'Unknown error'}`);
+      
+      // Don't silently fall back to mock - throw the error so user knows
+      const errorMsg = errorData.error?.message || `HTTP ${response.status}`;
+      throw new Error(`OpenAI API Error: ${errorMsg}`);
     }
     
     const data = await response.json();
     console.log('✅ OpenAI API Response received');
+    console.log('📊 Usage:', data.usage);
     
     const content = data.choices[0]?.message?.content;
     console.log('📝 Response content length:', content?.length || 0);
     
     // Check if response was cut off
     if (data.choices[0]?.finish_reason === 'length') {
-      console.warn('⚠️ Response was truncated, using mock data');
-      return getMockResponse(prompt, {});
+      console.warn('⚠️ Response was truncated due to max_tokens limit');
     }
     
     if (response_json_schema) {
       try {
-        return JSON.parse(content);
+        const parsed = JSON.parse(content);
+        console.log('✅ JSON parsed successfully');
+        return parsed;
       } catch (parseError) {
         console.error('❌ JSON Parse Error:', parseError.message);
-        console.log('📄 Raw content:', content?.substring(0, 500));
-        return getMockResponse(prompt, {});
+        console.log('📄 Raw content (first 1000 chars):', content?.substring(0, 1000));
+        throw new Error('Failed to parse AI response as JSON');
       }
     }
     
     return content;
   } catch (error) {
-    console.error('❌ AI Service Error:', error);
-    console.log('⚠️ Falling back to mock data...');
-    return getMockResponse(prompt, {});
+    console.error('❌ AI Service Error:', error.message);
+    // Re-throw the error so the calling code can handle it appropriately
+    throw error;
   }
 };
 

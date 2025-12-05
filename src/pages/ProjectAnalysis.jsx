@@ -44,6 +44,7 @@ export default function ProjectAnalysis() {
 
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [projectData, setProjectData] = useState(null);
+    const [analysisError, setAnalysisError] = useState(null);
 
     // Use Zustand stores
     const getProject = useProjectStore((state) => state.getProject);
@@ -60,21 +61,36 @@ export default function ProjectAnalysis() {
     // Load project with files on mount
     useEffect(() => {
         if (projectId && !projectData) {
+            console.log('🔄 Loading project:', projectId);
             getProjectAsync(projectId).then(p => {
                 if (p) {
                     setProjectData(p);
-                    console.log('📂 Project loaded with', Object.keys(p.file_contents || {}).length, 'files');
+                    const fileCount = Object.keys(p.file_contents || {}).length;
+                    console.log('📂 Project loaded:', p.name, 'Status:', p.status, 'Files:', fileCount);
+                    if (fileCount === 0) {
+                        console.warn('⚠️ No files loaded! Check if files were extracted and saved correctly.');
+                    }
+                } else {
+                    console.error('❌ Project not found:', projectId);
                 }
+            }).catch(err => {
+                console.error('❌ Error loading project:', err);
             });
         }
     }, [projectId]);
 
     // Run analysis when project is in analyzing state AND files are loaded
     useEffect(() => {
-        if (projectData?.status === 'analyzing' && !isAnalyzing && Object.keys(projectData.file_contents || {}).length > 0) {
+        const fileCount = Object.keys(projectData?.file_contents || {}).length;
+        console.log('🔍 Analysis check - Status:', projectData?.status, 'isAnalyzing:', isAnalyzing, 'Files:', fileCount);
+        
+        if (projectData?.status === 'analyzing' && !isAnalyzing && fileCount > 0) {
+            console.log('🚀 Starting analysis...');
             runAnalysis();
+        } else if (projectData?.status === 'analyzing' && fileCount === 0) {
+            console.log('⏳ Waiting for files to load...');
         }
-    }, [projectData?.status, projectData?.file_contents]);
+    }, [projectData?.status, projectData?.file_contents, isAnalyzing]);
 
     const runAnalysis = async () => {
         if (isAnalyzing || !projectData) return;
@@ -334,9 +350,11 @@ export default function ProjectAnalysis() {
             }
 
         } catch (error) {
-            console.error('Analysis error:', error);
+            console.error('❌ Analysis error:', error);
+            setAnalysisError(error.message || 'Analysis failed');
             updateProject(projectData.id, {
-                status: 'error'
+                status: 'error',
+                error_message: error.message
             });
         } finally {
             setIsAnalyzing(false);
@@ -438,6 +456,44 @@ export default function ProjectAnalysis() {
                         <div className="flex items-center justify-center gap-2 text-sm text-slate-500">
                             <Loader2 className="w-4 h-4 animate-spin" />
                             This usually takes 15-30 seconds
+                        </div>
+                    </motion.div>
+                )}
+
+                {/* Error State */}
+                {(project.status === 'error' || analysisError) && (
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="bg-slate-900/80 backdrop-blur-xl rounded-2xl border border-red-500/30 p-12 text-center"
+                    >
+                        <div className="w-20 h-20 mx-auto mb-6 relative">
+                            <div className="relative w-full h-full bg-gradient-to-br from-red-500 to-orange-500 rounded-full flex items-center justify-center">
+                                <AlertTriangle className="w-10 h-10 text-white" />
+                            </div>
+                        </div>
+                        <h2 className="text-xl font-semibold mb-2 text-red-400">Analysis Failed</h2>
+                        <p className="text-slate-400 mb-4">
+                            {analysisError || project.error_message || 'Something went wrong during analysis.'}
+                        </p>
+                        <div className="flex items-center justify-center gap-3">
+                            <Button 
+                                variant="outline" 
+                                className="border-red-500/30 text-red-400 hover:bg-red-500/10"
+                                onClick={() => {
+                                    setAnalysisError(null);
+                                    updateProject(project.id, { status: 'analyzing' });
+                                    runAnalysis();
+                                }}
+                            >
+                                <RefreshCw className="w-4 h-4 mr-2" />
+                                Retry Analysis
+                            </Button>
+                            <Link to={createPageUrl('Home')}>
+                                <Button variant="ghost" className="text-slate-400">
+                                    Go Home
+                                </Button>
+                            </Link>
                         </div>
                     </motion.div>
                 )}
