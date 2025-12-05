@@ -1,28 +1,41 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { saveProjectFiles, loadProjectFiles } from '@/services/storageService';
 
-// Generate unique IDs
 const generateId = () => `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
-// Helper to create storage-friendly project (exclude large data)
 const sanitizeProjectForStorage = (project) => {
-  const { file_contents, ...projectWithoutContents } = project;
+  if (!project) return null;
   return {
-    ...projectWithoutContents,
-    file_contents_count: Object.keys(file_contents || {}).length,
-    // Keep file_contents in memory only, not in localStorage
+    id: project.id,
+    name: project.name,
+    created_at: project.created_at,
+    updated_at: project.updated_at,
+    status: project.status,
+    source_type: project.source_type,
+    github_url: project.github_url,
+    zip_file_url: project.zip_file_url,
+    detected_stack: Array.isArray(project.detected_stack) ? project.detected_stack.slice(0, 20) : [],
+    summary: project.summary || '',
+    security_vulnerabilities: Array.isArray(project.security_vulnerabilities) ? project.security_vulnerabilities.slice(0, 50) : [],
+    code_smells: Array.isArray(project.code_smells) ? project.code_smells.slice(0, 100) : [],
+    test_suggestions: Array.isArray(project.test_suggestions) ? project.test_suggestions.slice(0, 50) : [],
+    issues: Array.isArray(project.issues) ? project.issues.slice(0, 100) : [],
+    architecture: project.architecture || null,
+    file_contents_count: Object.keys(project.file_contents || {}).length,
+    file_tree_count: Array.isArray(project.file_tree) ? project.file_tree.length : 0,
   };
 };
+
+const fileContentsCache = new Map();
+const fileTreeCache = new Map();
 
 export const useProjectStore = create(
   persist(
     (set, get) => ({
       projects: [],
       currentProject: null,
-      // In-memory storage for large data (not persisted to localStorage)
-      fileContentsCache: new Map(),
-      
-      // Project CRUD
+
       createProject: (projectData) => {
         const project = {
           id: generateId(),
@@ -35,75 +48,128 @@ export const useProjectStore = create(
           issues: [],
           ...projectData,
         };
-        
-        // Store file contents in memory cache
-        if (project.file_contents && Object.keys(project.file_contents).length > 0) {
-          get().fileContentsCache.set(project.id, project.file_contents);
+
+        const hasLargeData =
+          (project.file_contents && Object.keys(project.file_contents).length > 0) ||
+          (project.file_tree && project.file_tree.length > 0);
+
+        if (hasLargeData) {
+          fileContentsCache.set(project.id, project.file_contents || {});
+          fileTreeCache.set(project.id, project.file_tree || []);
+          saveProjectFiles(project.id, {
+            fileContents: project.file_contents || {},
+            fileTree: project.file_tree || [],
+          }).catch((err) => console.warn('Failed to save project files:', err));
         }
-        
-        // Store sanitized version in state
+
         const sanitized = sanitizeProjectForStorage(project);
-        
-        set((state) => ({ 
+
+        set((state) => ({
           projects: [...state.projects, sanitized],
-          currentProject: project // Keep full version in current
+          currentProject: {
+            ...project,
+            file_contents: fileContentsCache.get(project.id) || {},
+            file_tree: fileTreeCache.get(project.id) || [],
+          },
         }));
+
         return project;
       },
-      
+
       updateProject: (id, updates) => {
-        // Cache file contents if present
         if (updates.file_contents && Object.keys(updates.file_contents).length > 0) {
-          get().fileContentsCache.set(id, updates.file_contents);
+          fileContentsCache.set(id, updates.file_contents);
+          saveProjectFiles(id, {
+            fileContents: updates.file_contents,
+            fileTree: fileTreeCache.get(id) || [],
+          }).catch((err) => console.warn('Failed to save project files:', err));
         }
-        
-        // Sanitize updates for storage
-        const sanitizedUpdates = updates.file_contents 
-          ? sanitizeProjectForStorage(updates)
-          : updates;
-        
+
+        if (updates.file_tree && updates.file_tree.length > 0) {
+          fileTreeCache.set(id, updates.file_tree);
+          saveProjectFiles(id, {
+            fileContents: fileContentsCache.get(id) || {},
+            fileTree: updates.file_tree,
+          }).catch((err) => console.warn('Failed to save project files:', err));
+        }
+
+        const existing = get().projects.find((p) => p.id === id) || {};
+        const merged = { ...existing, ...updates };
+        const sanitized = sanitizeProjectForStorage(merged);
+
         set((state) => ({
           projects: state.projects.map((p) =>
-            p.id === id ? { ...p, ...sanitizedUpdates, updated_at: new Date().toISOString() } : p
+            p.id === id ? { ...sanitized, updated_at: new Date().toISOString() } : p
           ),
-          currentProject: state.currentProject?.id === id 
-            ? { ...state.currentProject, ...updates, updated_at: new Date().toISOString() }
-            : state.currentProject
+          currentProject:
+            state.currentProject?.id === id
+              ? {
+                  ...state.currentProject,
+                  ...updates,
+                  file_contents: fileContentsCache.get(id) || state.currentProject.file_contents || {},
+                  file_tree: fileTreeCache.get(id) || state.currentProject.file_tree || [],
+                  updated_at: new Date().toISOString(),
+                }
+              : state.currentProject,
         }));
       },
-      
+
       deleteProject: (id) => {
+        fileContentsCache.delete(id);
+        fileTreeCache.delete(id);
         set((state) => ({
           projects: state.projects.filter((p) => p.id !== id),
-          currentProject: state.currentProject?.id === id ? null : state.currentProject
+          currentProject: state.currentProject?.id === id ? null : state.currentProject,
         }));
       },
-      
+
       getProject: (id) => {
         const project = get().projects.find((p) => p.id === id);
         if (!project) return null;
-        
-        // Restore file contents from cache if available
-        const fileContents = get().fileContentsCache.get(id) || {};
-        return { ...project, file_contents: fileContents };
+
+        const result = {
+          ...project,
+          file_contents: fileContentsCache.get(id) || {},
+          file_tree: fileTreeCache.get(id) || [],
+        };
+
+        loadProjectFiles(id)
+          .then(({ fileContents, fileTree }) => {
+            if (fileContents && Object.keys(fileContents).length > 0) {
+              fileContentsCache.set(id, fileContents);
+            }
+            if (fileTree && fileTree.length > 0) {
+              fileTreeCache.set(id, fileTree);
+            }
+            const current = get().currentProject;
+            if (current?.id === id) {
+              set({
+                currentProject: {
+                  ...current,
+                  file_contents: fileContents || current.file_contents,
+                  file_tree: fileTree || current.file_tree,
+                },
+              });
+            }
+          })
+          .catch(() => {});
+
+        return result;
       },
-      
+
       setCurrentProject: (project) => {
         set({ currentProject: project });
       },
-      
+
       listProjects: () => {
         return get().projects;
       },
     }),
     {
       name: 'brain-lane-projects',
-      // Exclude fileContentsCache from persistence
       partialize: (state) => ({
-        projects: state.projects,
-        currentProject: state.currentProject 
-          ? sanitizeProjectForStorage(state.currentProject)
-          : null,
+        projects: Array.isArray(state.projects) ? state.projects.map(sanitizeProjectForStorage) : [],
+        currentProject: null,
       }),
     }
   )
@@ -113,8 +179,7 @@ export const useTaskStore = create(
   persist(
     (set, get) => ({
       tasks: [],
-      
-      // Task CRUD
+
       createTask: (taskData) => {
         const task = {
           id: generateId(),
@@ -127,7 +192,7 @@ export const useTaskStore = create(
         set((state) => ({ tasks: [...state.tasks, task] }));
         return task;
       },
-      
+
       updateTask: (id, updates) => {
         set((state) => ({
           tasks: state.tasks.map((t) =>
@@ -135,21 +200,21 @@ export const useTaskStore = create(
           ),
         }));
       },
-      
+
       deleteTask: (id) => {
         set((state) => ({
           tasks: state.tasks.filter((t) => t.id !== id),
         }));
       },
-      
+
       getTask: (id) => {
         return get().tasks.find((t) => t.id === id);
       },
-      
+
       getTasksByProject: (projectId) => {
         return get().tasks.filter((t) => t.project_id === projectId);
       },
-      
+
       listTasks: () => {
         return get().tasks;
       },
@@ -159,4 +224,3 @@ export const useTaskStore = create(
     }
   )
 );
-
