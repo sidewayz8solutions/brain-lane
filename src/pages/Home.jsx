@@ -9,17 +9,27 @@ import Footer from '../components/ui/Footer';
 import { createPageUrl } from '@/utils';
 import { useProjectStore } from '@/store/projectStore';
 import { UploadFile, ExtractZipContents, AnalyzeProjectStructure } from '@/api/integrations';
+import { runProjectAnalysis } from '@/services/analysisService';
+import { OrbitalSpinner } from '@/components/ui/LoadingSpinner';
 
 export default function Home() {
     const navigate = useNavigate();
     const [isUploading, setIsUploading] = useState(false);
     const [uploadError, setUploadError] = useState(null);
+    const [analysisStatus, setAnalysisStatus] = useState('idle');
+    const [analysisError, setAnalysisError] = useState(null);
+    const [analysisModalVisible, setAnalysisModalVisible] = useState(false);
+    const [analysisProject, setAnalysisProject] = useState(null);
     const createProject = useProjectStore((state) => state.createProject);
 
     const handleUpload = async (data) => {
         console.log('handleUpload called with:', data);
         setIsUploading(true);
         setUploadError(null);
+        setAnalysisError(null);
+        setAnalysisStatus('uploading');
+        setAnalysisModalVisible(true);
+        setAnalysisProject(null);
 
         try {
             let fileUrl = null;
@@ -48,7 +58,6 @@ export default function Home() {
                 console.log('Analysis result:', analysis);
                 detectedStack = analysis.detected_stack || [];
             } else if (data.type === 'github' && data.url) {
-                // GitHub URL import - create project with URL for later processing
                 console.log('Processing GitHub URL:', data.url);
                 fileTree = [];
                 fileContents = {};
@@ -67,16 +76,40 @@ export default function Home() {
             });
 
             console.log('Created project:', project);
-            
-            // Navigate to analysis page
-            const targetUrl = createPageUrl('ProjectAnalysis') + `?id=${project.id}`;
-            console.log('Navigating to:', targetUrl);
-            navigate(targetUrl);
+            setAnalysisProject(project);
+
+            if (data.type === 'zip') {
+                setAnalysisStatus('analyzing');
+                const analyzedProject = await runProjectAnalysis(project.id);
+                setAnalysisProject(analyzedProject);
+                setAnalysisStatus('ready');
+            } else {
+                console.warn('GitHub analysis is not automatic yet. View project for manual analysis.');
+                setAnalysisStatus('ready');
+                setAnalysisModalVisible(false);
+            }
 
         } catch (error) {
             console.error('Upload error:', error);
-            setUploadError(error.message || 'Failed to process file. Please try again.');
+            const message = error.message || 'Failed to process file. Please try again.';
+            setUploadError(message);
+            setAnalysisError(message);
+            setAnalysisStatus('error');
+        } finally {
             setIsUploading(false);
+        }
+    };
+
+    const handleCloseModal = () => {
+        if (analysisStatus === 'ready' || analysisStatus === 'error') {
+            setAnalysisModalVisible(false);
+        }
+    };
+
+    const handleViewResults = () => {
+        if (analysisProject?.id) {
+            setAnalysisModalVisible(false);
+            navigate(`${createPageUrl('ProjectAnalysis')}?id=${analysisProject.id}`);
         }
     };
 
@@ -476,6 +509,67 @@ export default function Home() {
 
             {/* Footer */}
             <Footer />
+
+            {analysisModalVisible && (
+                <motion.div 
+                    className="fixed inset-0 z-[100] bg-slate-950/80 backdrop-blur-2xl flex items-center justify-center px-6"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                >
+                    <motion.div
+                        initial={{ scale: 0.9, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        className="w-full max-w-xl bg-slate-900/80 border border-[#FFE566]/30 rounded-3xl p-10 text-center shadow-2xl"
+                    >
+                    <div className="mb-6 flex justify-center">
+                        {analysisStatus === 'ready' ? (
+                            <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-green-500/20 to-cyan-500/20 flex items-center justify-center border border-green-400/40">
+                                <CheckCircle className="w-12 h-12 text-green-400" />
+                            </div>
+                        ) : analysisStatus === 'error' ? (
+                            <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-red-500/30 to-orange-500/20 flex items-center justify-center border border-red-400/40">
+                                <AlertCircle className="w-12 h-12 text-red-400" />
+                            </div>
+                        ) : (
+                            <OrbitalSpinner size="lg" />
+                        )}
+                    </div>
+
+                    <h3 className="text-2xl font-semibold text-[#FFE566] mb-3">
+                        {analysisStatus === 'uploading' && 'Uploading Your Project'}
+                        {analysisStatus === 'analyzing' && 'Analyzing Your Project'}
+                        {analysisStatus === 'ready' && 'Analysis Complete'}
+                        {analysisStatus === 'error' && 'Something Went Wrong'}
+                    </h3>
+                    <p className="text-slate-300 leading-relaxed">
+                        {analysisStatus === 'uploading' && 'We\'re securing your ZIP, extracting files, and preparing them for AI.'}
+                        {analysisStatus === 'analyzing' && 'Our AI is reviewing your stack, scanning for issues, and building a completion plan. This usually takes under a minute.'}
+                        {analysisStatus === 'ready' && 'Your code intelligence report is ready. Jump in to review tasks, risks, and architecture insights.'}
+                        {analysisStatus === 'error' && (analysisError || 'We could not finish the analysis. Please try again or reach out if the issue persists.')}
+                    </p>
+
+                    {(analysisStatus === 'ready' || analysisStatus === 'error') && (
+                        <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
+                            {analysisStatus === 'ready' && (
+                                <button
+                                    onClick={handleViewResults}
+                                    className="w-full sm:w-auto px-6 py-3 rounded-2xl bg-gradient-to-r from-[#FFE566] to-[#FFC947] text-slate-900 font-semibold shadow-lg shadow-[#FFE566]/30 hover:opacity-90 transition"
+                                >
+                                    View Results
+                                </button>
+                            )}
+                            <button
+                                onClick={handleCloseModal}
+                                className="w-full sm:w-auto px-6 py-3 rounded-2xl border border-slate-700/60 text-slate-300 hover:bg-slate-800/80 transition"
+                            >
+                                Close
+                            </button>
+                        </div>
+                    )}
+                    </motion.div>
+                </motion.div>
+            )}
         </div>
     );
 }
