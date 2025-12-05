@@ -43,11 +43,13 @@ export default function ProjectAnalysis() {
     const projectId = urlParams.get('id');
 
     const [isAnalyzing, setIsAnalyzing] = useState(false);
+    const [projectData, setProjectData] = useState(null);
 
     // Use Zustand stores
     const getProject = useProjectStore((state) => state.getProject);
+    const getProjectAsync = useProjectStore((state) => state.getProjectAsync);
     const updateProject = useProjectStore((state) => state.updateProject);
-    const project = getProject(projectId);
+    const project = projectData || getProject(projectId);
 
     const tasksStore = useTaskStore((state) => state.tasks);
     const createTask = useTaskStore((state) => state.createTask);
@@ -55,20 +57,34 @@ export default function ProjectAnalysis() {
     // Filter tasks for this project
     const tasks = tasksStore.filter(t => t.project_id === projectId);
 
-    // Run analysis when project is in analyzing state
+    // Load project with files on mount
     useEffect(() => {
-        if (project?.status === 'analyzing' && !isAnalyzing) {
+        if (projectId && !projectData) {
+            getProjectAsync(projectId).then(p => {
+                if (p) {
+                    setProjectData(p);
+                    console.log('📂 Project loaded with', Object.keys(p.file_contents || {}).length, 'files');
+                }
+            });
+        }
+    }, [projectId]);
+
+    // Run analysis when project is in analyzing state AND files are loaded
+    useEffect(() => {
+        if (projectData?.status === 'analyzing' && !isAnalyzing && Object.keys(projectData.file_contents || {}).length > 0) {
             runAnalysis();
         }
-    }, [project?.status]);
+    }, [projectData?.status, projectData?.file_contents]);
 
     const runAnalysis = async () => {
-        if (isAnalyzing || !project) return;
+        if (isAnalyzing || !projectData) return;
         setIsAnalyzing(true);
 
         try {
             // Use file_contents that were already extracted during upload
-            let fileContents = project.file_contents || {};
+            let fileContents = projectData.file_contents || {};
+            
+            console.log('🔍 Starting analysis with', Object.keys(fileContents).length, 'files');
 
             // Build context from file contents
             const fileList = Object.keys(fileContents).join('\n') || 'No files extracted';
@@ -97,9 +113,11 @@ export default function ProjectAnalysis() {
             }
 
             // Call LLM for analysis
-            const analysisPrompt = project.zip_file_url 
+            const analysisPrompt = projectData.zip_file_url 
                 ? `Analyze the uploaded ZIP file and provide a comprehensive codebase analysis.`
-                : `Analyze the GitHub repository at ${project.github_url} and provide a comprehensive codebase analysis.`;
+                : `Analyze the GitHub repository at ${projectData.github_url} and provide a comprehensive codebase analysis.`;
+
+            console.log('🤖 Calling AI with', fileList.split('\n').length, 'files in context');
 
             const analysisResult = await InvokeLLM({
                 prompt: `${analysisPrompt}
@@ -269,8 +287,10 @@ export default function ProjectAnalysis() {
                 size: fileContents[path]?.length || 0
             }));
 
+            console.log('✅ Analysis complete, updating project...');
+
             // Update project with analysis results using Zustand store
-            updateProject(project.id, {
+            updateProject(projectData.id, {
                 summary: analysisResult.summary,
                 detected_stack: analysisResult.detected_stack,
                 architecture: analysisResult.architecture,
@@ -283,11 +303,25 @@ export default function ProjectAnalysis() {
                 status: 'ready'
             });
 
+            // Update local state too
+            setProjectData(prev => ({
+                ...prev,
+                summary: analysisResult.summary,
+                detected_stack: analysisResult.detected_stack,
+                architecture: analysisResult.architecture,
+                security_vulnerabilities: analysisResult.security_vulnerabilities,
+                code_smells: analysisResult.code_smells,
+                test_suggestions: analysisResult.test_suggestions,
+                issues: analysisResult.issues,
+                file_tree: fileTree,
+                status: 'ready'
+            }));
+
             // Create tasks using Zustand store
             if (analysisResult.tasks?.length > 0) {
                 for (const task of analysisResult.tasks) {
                     createTask({
-                        project_id: project.id,
+                        project_id: projectData.id,
                         title: task.title,
                         description: task.description,
                         category: task.category,
@@ -301,7 +335,7 @@ export default function ProjectAnalysis() {
 
         } catch (error) {
             console.error('Analysis error:', error);
-            updateProject(project.id, {
+            updateProject(projectData.id, {
                 status: 'error'
             });
         } finally {

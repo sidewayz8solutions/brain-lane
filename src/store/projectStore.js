@@ -127,34 +127,77 @@ export const useProjectStore = create(
         const project = get().projects.find((p) => p.id === id);
         if (!project) return null;
 
+        // Check cache first
+        const cachedContents = fileContentsCache.get(id);
+        const cachedTree = fileTreeCache.get(id);
+
         const result = {
           ...project,
-          file_contents: fileContentsCache.get(id) || {},
-          file_tree: fileTreeCache.get(id) || [],
+          file_contents: cachedContents || {},
+          file_tree: cachedTree || [],
         };
 
-        loadProjectFiles(id)
-          .then(({ fileContents, fileTree }) => {
-            if (fileContents && Object.keys(fileContents).length > 0) {
-              fileContentsCache.set(id, fileContents);
-            }
-            if (fileTree && fileTree.length > 0) {
-              fileTreeCache.set(id, fileTree);
-            }
-            const current = get().currentProject;
-            if (current?.id === id) {
-              set({
-                currentProject: {
-                  ...current,
-                  file_contents: fileContents || current.file_contents,
-                  file_tree: fileTree || current.file_tree,
-                },
-              });
-            }
-          })
-          .catch(() => {});
+        // Load from Supabase if not in cache
+        if (!cachedContents || Object.keys(cachedContents).length === 0) {
+          loadProjectFiles(id)
+            .then(({ fileContents, fileTree }) => {
+              if (fileContents && Object.keys(fileContents).length > 0) {
+                fileContentsCache.set(id, fileContents);
+                console.log('📂 Loaded', Object.keys(fileContents).length, 'files from Supabase for project', id);
+              }
+              if (fileTree && fileTree.length > 0) {
+                fileTreeCache.set(id, fileTree);
+              }
+              // Update currentProject with loaded data
+              const current = get().currentProject;
+              if (current?.id === id) {
+                set({
+                  currentProject: {
+                    ...current,
+                    file_contents: fileContents || current.file_contents,
+                    file_tree: fileTree || current.file_tree,
+                  },
+                });
+              }
+            })
+            .catch((err) => console.warn('Failed to load project files:', err));
+        }
 
         return result;
+      },
+
+      // Async version that waits for files to load
+      getProjectAsync: async (id) => {
+        const project = get().projects.find((p) => p.id === id);
+        if (!project) return null;
+
+        // Check cache first
+        let fileContents = fileContentsCache.get(id);
+        let fileTree = fileTreeCache.get(id);
+
+        // Load from Supabase if not in cache
+        if (!fileContents || Object.keys(fileContents).length === 0) {
+          try {
+            const loaded = await loadProjectFiles(id);
+            if (loaded.fileContents && Object.keys(loaded.fileContents).length > 0) {
+              fileContents = loaded.fileContents;
+              fileContentsCache.set(id, fileContents);
+              console.log('📂 Loaded', Object.keys(fileContents).length, 'files from Supabase');
+            }
+            if (loaded.fileTree && loaded.fileTree.length > 0) {
+              fileTree = loaded.fileTree;
+              fileTreeCache.set(id, fileTree);
+            }
+          } catch (err) {
+            console.warn('Failed to load project files:', err);
+          }
+        }
+
+        return {
+          ...project,
+          file_contents: fileContents || {},
+          file_tree: fileTree || [],
+        };
       },
 
       setCurrentProject: (project) => {
