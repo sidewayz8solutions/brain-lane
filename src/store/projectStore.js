@@ -4,6 +4,27 @@ import { saveProjectFiles, loadProjectFiles } from '@/services/storageService';
 
 const generateId = () => `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
+const formatDetectedStack = (stack) => {
+  if (Array.isArray(stack)) {
+    return stack.slice(0, 20);
+  }
+  if (stack && typeof stack === 'object') {
+    return {
+      framework: stack.framework || '',
+      language: stack.language || '',
+      package_manager: stack.package_manager || '',
+      testing_framework: stack.testing_framework || '',
+      database: stack.database || '',
+      additional: Array.isArray(stack.additional)
+        ? stack.additional.slice(0, 10)
+        : stack.additional
+          ? [].concat(stack.additional).slice(0, 10)
+          : [],
+    };
+  }
+  return [];
+};
+
 const sanitizeProjectForStorage = (project) => {
   if (!project) return null;
   return {
@@ -15,7 +36,7 @@ const sanitizeProjectForStorage = (project) => {
     source_type: project.source_type,
     github_url: project.github_url,
     zip_file_url: project.zip_file_url,
-    detected_stack: Array.isArray(project.detected_stack) ? project.detected_stack.slice(0, 20) : [],
+    detected_stack: formatDetectedStack(project.detected_stack),
     summary: project.summary || '',
     security_vulnerabilities: Array.isArray(project.security_vulnerabilities) ? project.security_vulnerabilities.slice(0, 50) : [],
     code_smells: Array.isArray(project.code_smells) ? project.code_smells.slice(0, 100) : [],

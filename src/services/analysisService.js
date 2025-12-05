@@ -3,6 +3,12 @@ import { InvokeLLM } from '@/services/aiService';
 
 const IMPORTANT_PATHS = ['package.json', 'requirements.txt', 'README.md', 'setup.py', 'pyproject.toml'];
 const CODE_EXTENSIONS = ['.js', '.jsx', '.ts', '.tsx', '.py'];
+const MAX_IMPORTANT_FILES = 4;
+const MAX_IMPORTANT_CHARS = 3000;
+const MAX_SAMPLE_FILES = 5;
+const MAX_CODE_CHARS = 2000;
+const MAX_FILE_LIST_ENTRIES = 200;
+const CONTEXT_ERROR_PATTERNS = ['context length', 'token limit', 'maximum context', 'too many tokens', 'request too large'];
 
 const buildAnalysisPrompt = (projectData, fileList, importantFiles, sampleCode) => {
   const sourceDescription = projectData.zip_file_url
@@ -175,9 +181,12 @@ const responseSchema = {
 
 const collectImportantFiles = (fileContents) => {
   let importantFiles = '';
+  let count = 0;
   for (const path of Object.keys(fileContents)) {
-    if (IMPORTANT_PATHS.some((p) => path.endsWith(p))) {
-      importantFiles += `\n--- ${path} ---\n${fileContents[path]?.substring(0, 3000)}\n`;
+    if (IMPORTANT_PATHS.some((p) => path.toLowerCase().endsWith(p.toLowerCase()))) {
+      importantFiles += `\n--- ${path} ---\n${fileContents[path]?.substring(0, MAX_IMPORTANT_CHARS)}\n`;
+      count += 1;
+      if (count >= MAX_IMPORTANT_FILES) break;
     }
   }
   return importantFiles;
@@ -188,14 +197,58 @@ const collectSampleCode = (fileContents) => {
   let codeCount = 0;
 
   for (const [path, content] of Object.entries(fileContents)) {
-    if (codeCount >= 5) break;
-    if (CODE_EXTENSIONS.some((ext) => path.endsWith(ext)) && content && content.length < 5000) {
-      sampleCode += `\n--- ${path} ---\n${content.substring(0, 2000)}\n`;
+    if (codeCount >= MAX_SAMPLE_FILES) break;
+    if (CODE_EXTENSIONS.some((ext) => path.toLowerCase().endsWith(ext)) && content) {
+      sampleCode += `\n--- ${path} ---\n${content.substring(0, MAX_CODE_CHARS)}\n`;
       codeCount++;
     }
   }
 
   return sampleCode;
+};
+
+const collectPrioritySnippets = (fileContents) => {
+  let readmeSnippet = '';
+  let packageSnippet = '';
+  for (const [path, content] of Object.entries(fileContents)) {
+    const lower = path.toLowerCase();
+    if (!readmeSnippet && lower.endsWith('readme.md')) {
+      readmeSnippet = content.substring(0, 4000);
+    }
+    if (!packageSnippet && lower.endsWith('package.json')) {
+      packageSnippet = content.substring(0, 3000);
+    }
+    if (readmeSnippet && packageSnippet) break;
+  }
+  return { readmeSnippet, packageSnippet };
+};
+
+const buildFallbackPrompt = (projectData, limitedFileList, readmeSnippet, packageSnippet) => {
+  const description = projectData.zip_file_url
+    ? 'Analyze this uploaded codebase using only the provided high-signal files.'
+    : `Analyze the repository at ${projectData.github_url} using the provided summary files.`;
+
+  return `${description}
+
+You previously rejected this request due to context limits. Now focus strictly on the following:
+
+${limitedFileList ? `FILE OVERVIEW (truncated):\n${limitedFileList}\n` : ''}
+${packageSnippet ? `PACKAGE.JSON SUMMARY:\n${packageSnippet}\n` : ''}
+${readmeSnippet ? `README EXCERPT:\n${readmeSnippet}\n` : ''}
+
+Provide the same structured analysis (summary, stack, architecture, vulnerabilities, smells, issues, tests, prioritized tasks). Be concise but specific and reference the limited data you received.`;
+};
+
+const isContextError = (message = '') => {
+  const lower = message.toLowerCase();
+  return CONTEXT_ERROR_PATTERNS.some((pattern) => lower.includes(pattern));
+};
+
+const formatFileList = (filePaths, limit = MAX_FILE_LIST_ENTRIES) => {
+  const limited = filePaths.slice(0, limit);
+  const remaining = filePaths.length - limited.length;
+  const baseList = limited.join('\n');
+  return remaining > 0 ? `${baseList}\n...and ${remaining} more files (truncated for context)` : baseList;
 };
 
 export async function runProjectAnalysis(projectId) {
@@ -210,34 +263,29 @@ export async function runProjectAnalysis(projectId) {
   }
 
   const fileContents = projectData.file_contents || {};
-  const fileCount = Object.keys(fileContents).length;
+  const filePaths = Object.keys(fileContents);
+  const fileCount = filePaths.length;
 
   if (fileCount === 0) {
     throw new Error('No files were extracted for this project. Please re-upload the ZIP.');
   }
 
   console.log('🔍 Starting analysis with', fileCount, 'files');
-  const fileList = Object.keys(fileContents).join('\n') || 'No files extracted';
+  const fileList = formatFileList(filePaths, MAX_FILE_LIST_ENTRIES) || 'No files extracted';
   const importantFiles = collectImportantFiles(fileContents);
   const sampleCode = collectSampleCode(fileContents);
+  const limitedFileList = formatFileList(filePaths, Math.min(50, MAX_FILE_LIST_ENTRIES));
+  const { readmeSnippet, packageSnippet } = collectPrioritySnippets(fileContents);
 
-  try {
-    const analysisPrompt = buildAnalysisPrompt(projectData, fileList, importantFiles, sampleCode);
-
-    console.log('🤖 Calling AI with context files:', fileList.split('\n').length);
-    const analysisResult = await InvokeLLM({
-      prompt: analysisPrompt,
-      response_json_schema: responseSchema,
-    });
-
-    const fileTree = Object.keys(fileContents).map((path) => ({
+  const persistAnalysis = (analysisResult, opts = {}) => {
+    const fileTree = filePaths.map((path) => ({
       path,
       type: 'file',
       size: fileContents[path]?.length || 0,
     }));
 
-    console.log('✅ Analysis complete, updating project store');
-    projectStore.updateProject(projectId, {
+    const payload = {
+      ...projectData,
       summary: analysisResult.summary,
       detected_stack: analysisResult.detected_stack,
       architecture: analysisResult.architecture,
@@ -248,7 +296,10 @@ export async function runProjectAnalysis(projectId) {
       file_tree: fileTree,
       file_contents: fileContents,
       status: 'ready',
-    });
+      analysis_strategy: opts.strategy || 'full',
+    };
+
+    projectStore.updateProject(projectId, payload);
 
     if (analysisResult.tasks?.length) {
       analysisResult.tasks.forEach((task) => {
@@ -265,21 +316,48 @@ export async function runProjectAnalysis(projectId) {
       });
     }
 
-    return {
-      ...projectData,
-      summary: analysisResult.summary,
-      detected_stack: analysisResult.detected_stack,
-      architecture: analysisResult.architecture,
-      security_vulnerabilities: analysisResult.security_vulnerabilities,
-      code_smells: analysisResult.code_smells,
-      test_suggestions: analysisResult.test_suggestions,
-      issues: analysisResult.issues,
-      file_tree: fileTree,
-      file_contents: fileContents,
-      status: 'ready',
-    };
+    return payload;
+  };
+
+  try {
+    const analysisPrompt = buildAnalysisPrompt(projectData, fileList, importantFiles, sampleCode);
+
+    console.log('🤖 Calling AI with context files:', fileList.split('\n').length);
+    const analysisResult = await InvokeLLM({
+      prompt: analysisPrompt,
+      response_json_schema: responseSchema,
+    });
+
+    console.log('✅ Analysis complete, updating project store');
+    return persistAnalysis(analysisResult);
   } catch (error) {
     console.error('❌ Analysis failed:', error);
+
+    if (isContextError(error.message)) {
+      console.warn('⚠️ Context limit reached. Retrying with fallback prompt.');
+      try {
+        const fallbackPrompt = buildFallbackPrompt(
+          projectData,
+          limitedFileList,
+          readmeSnippet,
+          packageSnippet,
+        );
+        const fallbackResult = await InvokeLLM({
+          prompt: fallbackPrompt,
+          response_json_schema: responseSchema,
+        });
+        console.log('✅ Fallback analysis succeeded');
+        return persistAnalysis(fallbackResult, { strategy: 'fallback' });
+      } catch (fallbackError) {
+        console.error('❌ Fallback analysis also failed:', fallbackError);
+        projectStore.updateProject(projectId, {
+          status: 'error',
+          error_message: fallbackError.message,
+        });
+        throw fallbackError;
+      }
+    }
+
     projectStore.updateProject(projectId, {
       status: 'error',
       error_message: error.message,
