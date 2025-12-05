@@ -46,11 +46,21 @@ export default function ProjectAnalysis() {
     const [projectData, setProjectData] = useState(null);
     const [analysisError, setAnalysisError] = useState(null);
 
-    // Use Zustand stores
+    // Use Zustand stores - subscribe to projects array for updates
+    const projects = useProjectStore((state) => state.projects);
     const getProject = useProjectStore((state) => state.getProject);
     const getProjectAsync = useProjectStore((state) => state.getProjectAsync);
     const updateProject = useProjectStore((state) => state.updateProject);
-    const project = projectData || getProject(projectId);
+    
+    // Get project from store (will update when store changes)
+    const storeProject = projects.find(p => p.id === projectId);
+    
+    // Merge store data with loaded file data
+    const project = storeProject ? {
+        ...storeProject,
+        file_contents: projectData?.file_contents || {},
+        file_tree: projectData?.file_tree || []
+    } : projectData;
 
     const tasksStore = useTaskStore((state) => state.tasks);
     const createTask = useTaskStore((state) => state.createTask);
@@ -82,15 +92,16 @@ export default function ProjectAnalysis() {
     // Run analysis when project is in analyzing state AND files are loaded
     useEffect(() => {
         const fileCount = Object.keys(projectData?.file_contents || {}).length;
-        console.log('🔍 Analysis check - Status:', projectData?.status, 'isAnalyzing:', isAnalyzing, 'Files:', fileCount);
+        const currentStatus = storeProject?.status || projectData?.status;
+        console.log('🔍 Analysis check - Status:', currentStatus, 'isAnalyzing:', isAnalyzing, 'Files:', fileCount);
         
-        if (projectData?.status === 'analyzing' && !isAnalyzing && fileCount > 0) {
+        if (currentStatus === 'analyzing' && !isAnalyzing && fileCount > 0) {
             console.log('🚀 Starting analysis...');
             runAnalysis();
-        } else if (projectData?.status === 'analyzing' && fileCount === 0) {
+        } else if (currentStatus === 'analyzing' && fileCount === 0) {
             console.log('⏳ Waiting for files to load...');
         }
-    }, [projectData?.status, projectData?.file_contents, isAnalyzing]);
+    }, [storeProject?.status, projectData?.file_contents, isAnalyzing]);
 
     const runAnalysis = async () => {
         if (isAnalyzing || !projectData) return;
