@@ -162,12 +162,24 @@ export const InvokeLLM = async ({ prompt, response_json_schema, add_context_from
       temperature: 0.3, // Lower temperature for more consistent structured output
     };
     
-    const response = await safeFetch('https://api.openai.com/v1/chat/completions', {
+    // Use proxy endpoint when deployed (avoids CORS), direct API when local
+    const isLocalhost = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+    const apiUrl = isLocalhost 
+      ? 'https://api.openai.com/v1/chat/completions'
+      : '/api/openai';
+    
+    const headers = {
+      'Content-Type': 'application/json',
+    };
+    
+    // Only include Authorization header for direct API calls (localhost)
+    if (isLocalhost) {
+      headers['Authorization'] = `Bearer ${AI_CONFIG.apiKey}`;
+    }
+    
+    const response = await safeFetch(apiUrl, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${AI_CONFIG.apiKey}`,
-      },
+      headers,
       body: JSON.stringify(requestBody),
     }, { retries: 3, baseDelayMs: 1000, timeoutMs: 60000 });
     
