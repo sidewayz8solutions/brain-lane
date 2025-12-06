@@ -118,12 +118,22 @@ export const UploadZipToSupabase = async ({ file, projectId, bucket = (import.me
   const entries = await reader.getEntries();
   const uploaded = [];
   const errors = [];
+  const skipped = [];
+
+  // Skip heavy folders that shouldn't be uploaded
+  const skipFolders = ['node_modules/', 'dist/', 'build/', '.git/', 'vendor/', '__pycache__/', '.next/', '.nuxt/', '.cache/'];
 
   for (const entry of entries) {
     const path = entry.filename;
     const isDir = entry.directory === true;
     if (isDir) continue; // storage only for files
     if (path.startsWith('__MACOSX') || path.startsWith('.')) continue;
+
+    // Skip node_modules and other heavy folders
+    if (skipFolders.some(folder => path.includes(folder))) {
+      skipped.push(path);
+      continue;
+    }
 
     try {
       // Stream file content into a Blob without loading entire ZIP in memory
@@ -146,8 +156,8 @@ export const UploadZipToSupabase = async ({ file, projectId, bucket = (import.me
   }
 
   await reader.close();
-  console.log('Supabase upload complete. Files:', uploaded.length, 'Errors:', errors.length);
-  return { uploaded, errors, bucket };
+  console.log('Supabase upload complete. Files:', uploaded.length, 'Skipped:', skipped.length, 'Errors:', errors.length);
+  return { uploaded, errors, skipped, bucket };
 };
 
 export const AnalyzeProjectStructure = (fileTree, fileContents) => {
