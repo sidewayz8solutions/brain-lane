@@ -15,6 +15,49 @@ if (!AI_CONFIG.demoMode) {
   console.log('🔑 API Key loaded:', AI_CONFIG.apiKey?.slice(0, 20) + '...');
 }
 
+// Resilient fetch with timeout & exponential backoff for transient network errors
+const safeFetch = async (url, options = {}, {
+  retries = 3,
+  baseDelayMs = 750,
+  timeoutMs = 30000,
+} = {}) => {
+  const transientMessages = [
+    'Failed to fetch', // generic network failure
+    'ERR_NETWORK_CHANGED', // Chrome network changed
+    'NetworkError when attempting to fetch resource',
+    'TypeError: NetworkError',
+  ];
+
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    // If offline, wait briefly then retry
+    if (typeof navigator !== 'undefined' && navigator && navigator.onLine === false) {
+      console.warn('📡 Offline detected. Waiting for network before retrying...');
+      await new Promise(res => setTimeout(res, baseDelayMs * (attempt + 1)));
+    }
+
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      const resp = await fetch(url, { ...options, signal: controller.signal });
+      clearTimeout(timer);
+      return resp;
+    } catch (err) {
+      clearTimeout(timer);
+      const msg = err?.message || '';
+      const isTransient = transientMessages.some(t => msg.includes(t)) || err?.name === 'AbortError';
+      const canRetry = attempt < retries && isTransient;
+      console.warn(`⚠️ Fetch error on attempt ${attempt + 1}/${retries + 1}: ${msg}`);
+      if (!canRetry) {
+        throw err;
+      }
+      const backoff = baseDelayMs * Math.pow(2, attempt);
+      await new Promise(res => setTimeout(res, backoff));
+    }
+  }
+  // Should not reach here
+  throw new Error('safeFetch exhausted without response');
+};
+
 // Mock responses for demo mode - returns properly structured data for ProjectAnalysis
 const getMockResponse = (prompt, context) => {
   const lowerPrompt = prompt.toLowerCase();
@@ -119,14 +162,14 @@ export const InvokeLLM = async ({ prompt, response_json_schema, add_context_from
       temperature: 0.3, // Lower temperature for more consistent structured output
     };
     
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    const response = await safeFetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${AI_CONFIG.apiKey}`,
       },
       body: JSON.stringify(requestBody),
-    });
+    }, { retries: 3, baseDelayMs: 1000, timeoutMs: 60000 });
     
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
@@ -164,6 +207,10 @@ export const InvokeLLM = async ({ prompt, response_json_schema, add_context_from
     return content;
   } catch (error) {
     console.error('❌ AI Service Error:', error.message);
+    // Provide clearer guidance for common network errors
+    if (error?.message?.includes('Failed to fetch') || error?.message?.includes('ERR_NETWORK_CHANGED')) {
+      throw new Error('Network error while contacting OpenAI. Please check your connection and try again. The app will retry automatically, but if the issue persists, refresh the page.');
+    }
     // Re-throw the error so the calling code can handle it appropriately
     throw error;
   }
