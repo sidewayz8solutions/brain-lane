@@ -90,28 +90,42 @@ export default function ProjectAnalysis() {
 
     // Run analysis when project is in analyzing state AND files are loaded
     useEffect(() => {
-        const fileCount = Object.keys(projectData?.file_contents || {}).length;
-        const currentStatus = storeProject?.status || projectData?.status;
-        console.log('🔍 Analysis check - Status:', currentStatus, 'isAnalyzing:', isAnalyzing, 'Files:', fileCount);
+        let mounted = true;
 
-        if (projectId && currentStatus === 'analyzing' && !isAnalyzing && fileCount > 0) {
-            console.log('🚀 Starting analysis via shared service...');
-            setIsAnalyzing(true);
-            runProjectAnalysis(projectId)
-                .then((result) => {
-                    setProjectData(result);
-                    setAnalysisError(null);
-                })
-                .catch((error) => {
-                    console.error('❌ Analysis error:', error);
-                    setAnalysisError(error.message || 'Analysis failed');
-                })
-                .finally(() => {
-                    setIsAnalyzing(false);
-                });
-        } else if (currentStatus === 'analyzing' && fileCount === 0) {
-            console.log('⏳ Waiting for files to load...');
-        }
+        const runAnalysis = async () => {
+            const fileCount = Object.keys(projectData?.file_contents || {}).length;
+            const currentStatus = storeProject?.status || projectData?.status;
+            console.log('🔍 Analysis check - Status:', currentStatus, 'isAnalyzing:', isAnalyzing, 'Files:', fileCount);
+
+            if (projectId && currentStatus === 'analyzing' && !isAnalyzing && fileCount > 0) {
+                console.log('🚀 Starting analysis via shared service...');
+                setIsAnalyzing(true);
+                try {
+                    const result = await runProjectAnalysis(projectId);
+                    if (mounted) {
+                        setProjectData(result);
+                        setAnalysisError(null);
+                    }
+                } catch (error) {
+                    if (mounted) {
+                        console.error('❌ Analysis error:', error);
+                        setAnalysisError(error.message || 'Analysis failed');
+                    }
+                } finally {
+                    if (mounted) {
+                        setIsAnalyzing(false);
+                    }
+                }
+            } else if (currentStatus === 'analyzing' && fileCount === 0) {
+                console.log('⏳ Waiting for files to load...');
+            }
+        };
+
+        runAnalysis();
+
+        return () => {
+            mounted = false;
+        };
     }, [projectId, storeProject?.status, projectData?.file_contents, isAnalyzing]);
 
     if (!project) {

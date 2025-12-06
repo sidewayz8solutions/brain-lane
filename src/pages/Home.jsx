@@ -80,13 +80,19 @@ export default function Home() {
 
             if (data.type === 'zip') {
                 setAnalysisStatus('analyzing');
-                const analyzedProject = await runProjectAnalysis(project.id);
-                setAnalysisProject(analyzedProject);
-                setAnalysisStatus('ready');
+                try {
+                    const analyzedProject = await runProjectAnalysis(project.id);
+                    setAnalysisProject(analyzedProject);
+                    setAnalysisStatus('ready');
+                } catch (analysisErr) {
+                    console.error('Analysis failed in Home:', analysisErr);
+                    setAnalysisStatus('error');
+                    setAnalysisError(analysisErr.message || 'Analysis failed');
+                    throw analysisErr;
+                }
             } else {
                 console.warn('GitHub analysis is not automatic yet. View project for manual analysis.');
                 setAnalysisStatus('ready');
-                setAnalysisModalVisible(false);
             }
 
         } catch (error) {
