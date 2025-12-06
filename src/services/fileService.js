@@ -1,5 +1,7 @@
 // File Service - Handle file uploads and processing
-import JSZip from 'jszip';
+// Use streaming ZIP reader to handle very large archives without loading into memory
+import { ZipReader, BlobReader, TextWriter, BlobWriter } from '@zip.js/zip.js';
+import { supabase, hasSupabase } from './supabaseClient';
 
 // Store files in memory/IndexedDB for now
 // Can be replaced with Supabase Storage or S3
@@ -9,15 +11,14 @@ const fileStorage = new Map();
 export const UploadFile = async ({ file }) => {
   const fileId = `file-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
   
-  // Read file as ArrayBuffer
-  const arrayBuffer = await file.arrayBuffer();
-  
-  // Store in memory (for demo) - in production use Supabase/S3
+  // Do not load huge files in memory; store a lightweight reference
+  // In production, upload to Supabase/S3 directly and keep metadata
   fileStorage.set(fileId, {
     name: file.name,
     type: file.type,
     size: file.size,
-    data: arrayBuffer,
+    // Keep the original File reference for streaming operations
+    blob: file,
     created_at: new Date().toISOString()
   });
   
@@ -32,75 +33,63 @@ export const UploadFile = async ({ file }) => {
 export const ExtractZipContents = async (file) => {
   try {
     console.log('Starting ZIP extraction for file:', file.name, 'Size:', (file.size / 1024 / 1024).toFixed(2), 'MB');
-    
-    const zip = new JSZip();
-    const contents = await zip.loadAsync(file);
-    
-    console.log('ZIP loaded, processing entries...');
-    
-    const fileTree = [];
-    const fileContents = {};
-    
-    const processEntry = async (relativePath, zipEntry) => {
-      if (zipEntry.dir) {
-        return { name: relativePath, type: 'directory', children: [] };
-      }
-      
-      // Only process text-based files
-      const textExtensions = ['.js', '.jsx', '.ts', '.tsx', '.json', '.css', '.scss', '.html', '.md', '.txt', '.py', '.rb', '.go', '.rs', '.java', '.vue', '.svelte'];
-      const isTextFile = textExtensions.some(ext => relativePath.toLowerCase().endsWith(ext));
-      
-      // Skip node_modules, dist, build folders for performance
-      const skipFolders = ['node_modules/', 'dist/', 'build/', '.git/', 'vendor/', '__pycache__/'];
-      const shouldSkip = skipFolders.some(folder => relativePath.includes(folder));
-      
-      if (isTextFile && !shouldSkip && zipEntry._data?.uncompressedSize < 500000) { // Skip files > 500KB
-        try {
-          const content = await zipEntry.async('string');
-          fileContents[relativePath] = content;
-        } catch (e) {
-          console.warn(`Could not read ${relativePath}:`, e);
-        }
-      }
-      
-      return { name: relativePath, type: 'file', size: zipEntry._data?.uncompressedSize || 0 };
-    };
-    
-    // Build file tree
-    const entries = [];
-    const allFiles = Object.entries(contents.files);
-    console.log('Total entries in ZIP:', allFiles.length);
-    
-    for (const [path, entry] of allFiles) {
-      if (!path.startsWith('__MACOSX') && !path.startsWith('.')) {
-        entries.push(await processEntry(path, entry));
-      }
-    }
-    
-    console.log('Processed entries:', entries.length);
-    
-    // Organize into tree structure
+    // Stream entries using zip.js to avoid loading entire archive
+    const reader = new ZipReader(new BlobReader(file));
+    const entries = await reader.getEntries();
+    console.log('ZIP entries discovered:', entries.length);
+
     const root = { name: '', type: 'directory', children: [] };
-    
-    entries.forEach(entry => {
-      const parts = entry.name.split('/').filter(Boolean);
+    const fileContents = {};
+
+    const textExtensions = ['.js', '.jsx', '.ts', '.tsx', '.json', '.css', '.scss', '.html', '.md', '.txt', '.py', '.rb', '.go', '.rs', '.java', '.vue', '.svelte'];
+    const skipFolders = ['node_modules/', 'dist/', 'build/', '.git/', 'vendor/', '__pycache__/'];
+    const MAX_CONTENT_BYTES = 500_000; // read small text files only
+
+    const addToTree = (fullPath, size, isDir) => {
+      const parts = fullPath.split('/').filter(Boolean);
       let current = root;
-      
       parts.forEach((part, index) => {
         let child = current.children?.find(c => c.name === part);
         if (!child) {
-          child = index === parts.length - 1 && entry.type === 'file'
-            ? { name: part, type: 'file', path: entry.name, size: entry.size }
-            : { name: part, type: 'directory', children: [] };
+          const isLeafFile = !isDir && index === parts.length - 1;
+          child = isLeafFile ? { name: part, type: 'file', path: fullPath, size } : { name: part, type: 'directory', children: [] };
           current.children = current.children || [];
           current.children.push(child);
         }
         current = child;
       });
-    });
-    
-    console.log('Extraction complete. Files with content:', Object.keys(fileContents).length);
-    
+    };
+
+    for (const entry of entries) {
+      const path = entry.filename;
+      if (path.startsWith('__MACOSX') || path.startsWith('.')) continue;
+      const isDir = entry.directory === true;
+      const size = entry.uncompressedSize || 0;
+
+      // Skip heavy/system folders early
+      if (skipFolders.some(folder => path.includes(folder))) {
+        addToTree(path, size, isDir);
+        continue;
+      }
+
+      addToTree(path, size, isDir);
+
+      if (!isDir) {
+        const isTextFile = textExtensions.some(ext => path.toLowerCase().endsWith(ext));
+        if (isTextFile && size <= MAX_CONTENT_BYTES) {
+          try {
+            const content = await entry.getData(new TextWriter());
+            fileContents[path] = content;
+          } catch (e) {
+            console.warn(`Could not read ${path}:`, e);
+          }
+        }
+      }
+    }
+
+    await reader.close();
+    console.log('Streaming extraction complete. Files with content:', Object.keys(fileContents).length);
+
     return {
       fileTree: root.children || [],
       fileContents,
@@ -116,6 +105,49 @@ export const ExtractZipContents = async (file) => {
       error: error.message
     };
   }
+};
+
+// Upload all ZIP entries to Supabase Storage under a project folder, streaming per entry
+export const UploadZipToSupabase = async ({ file, projectId, bucket = (import.meta.env.VITE_SUPABASE_BUCKET || 'projects') }) => {
+  if (!hasSupabase) {
+    throw new Error('Supabase is not configured. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.');
+  }
+  console.log('Uploading ZIP to Supabase:', { name: file.name, sizeMB: (file.size/1024/1024).toFixed(2), bucket, projectId });
+
+  const reader = new ZipReader(new BlobReader(file));
+  const entries = await reader.getEntries();
+  const uploaded = [];
+  const errors = [];
+
+  for (const entry of entries) {
+    const path = entry.filename;
+    const isDir = entry.directory === true;
+    if (isDir) continue; // storage only for files
+    if (path.startsWith('__MACOSX') || path.startsWith('.')) continue;
+
+    try {
+      // Stream file content into a Blob without loading entire ZIP in memory
+      const blob = await entry.getData(new BlobWriter());
+      const objectPath = `${projectId}/${path}`;
+      const { error } = await supabase.storage.from(bucket).upload(objectPath, blob, {
+        upsert: true,
+        contentType: blob.type || 'application/octet-stream'
+      });
+      if (error) {
+        console.error('Supabase upload error for', objectPath, error.message);
+        errors.push({ path: objectPath, error: error.message });
+      } else {
+        uploaded.push(objectPath);
+      }
+    } catch (e) {
+      console.warn('Failed to stream and upload entry:', path, e);
+      errors.push({ path, error: e.message });
+    }
+  }
+
+  await reader.close();
+  console.log('Supabase upload complete. Files:', uploaded.length, 'Errors:', errors.length);
+  return { uploaded, errors, bucket };
 };
 
 export const AnalyzeProjectStructure = (fileTree, fileContents) => {
