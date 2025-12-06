@@ -60,6 +60,11 @@ export default function ProjectAnalysis() {
 
     // Filter tasks for this project
     const tasks = tasksStore.filter(t => t.project_id === projectId);
+    
+    // Log for debugging
+    React.useEffect(() => {
+        console.log('📊 ProjectAnalysis - Tasks:', tasks.length, '| Total tasks in store:', tasksStore.length, '| Project ID:', projectId);
+    }, [tasks, tasksStore, projectId]);
 
     // Load project with files on mount
     useEffect(() => {

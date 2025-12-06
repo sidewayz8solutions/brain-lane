@@ -216,10 +216,25 @@ export default function ProjectHealth() {
     const urlParams = new URLSearchParams(window.location.search);
     const projectId = urlParams.get('id');
     const [timeRange, setTimeRange] = useState('7d');
+    const [projectData, setProjectData] = useState(null);
 
     // Use Zustand stores
     const getProject = useProjectStore((state) => state.getProject);
-    const project = getProject(projectId);
+    const getProjectAsync = useProjectStore((state) => state.getProjectAsync);
+    const project = projectData || getProject(projectId);
+
+    // Load full project data on mount
+    React.useEffect(() => {
+        if (projectId && !projectData) {
+            getProjectAsync(projectId).then(p => {
+                if (p) {
+                    setProjectData(p);
+                }
+            }).catch(err => {
+                console.error('Failed to load project:', err);
+            });
+        }
+    }, [projectId]);
 
     const tasksStore = useTaskStore((state) => state.tasks);
     const tasks = tasksStore.filter(t => t.project_id === projectId);

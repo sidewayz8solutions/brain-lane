@@ -301,8 +301,10 @@ export async function runProjectAnalysis(projectId) {
 
     projectStore.updateProject(projectId, payload);
 
+    console.log('📋 Creating tasks from analysis result. Tasks received:', analysisResult.tasks?.length || 0);
     if (analysisResult.tasks?.length) {
       analysisResult.tasks.forEach((task) => {
+        console.log('✏️ Creating task:', task.title, '| Priority:', task.priority, '| Category:', task.category);
         taskStore.createTask({
           project_id: projectId,
           title: task.title,
@@ -314,6 +316,8 @@ export async function runProjectAnalysis(projectId) {
           status: 'pending',
         });
       });
+    } else {
+      console.warn('⚠️ No tasks in analysis result');
     }
 
     return payload;
