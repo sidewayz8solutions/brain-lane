@@ -9,7 +9,7 @@ import Footer from '../components/ui/Footer';
 import { createPageUrl } from '@/utils';
 import { useProjectStore } from '@/store/projectStore';
 import { UploadFile, ExtractZipContents, AnalyzeProjectStructure, UploadZipToSupabase } from '@/api/integrations';
-import { hasSupabase } from '@/services/supabaseClient';
+import { hasSupabase, getSupabaseDiagnostics } from '@/services/supabaseClient';
 import { runProjectAnalysis } from '@/services/analysisService';
 import { OrbitalSpinner } from '@/components/ui/LoadingSpinner';
 
@@ -43,7 +43,9 @@ export default function Home() {
                 
                 // Upload ZIP entries to Supabase Storage (streamed)
                 if (!hasSupabase) {
-                    throw new Error('Supabase is not configured. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.');
+                    const diag = getSupabaseDiagnostics();
+                    console.warn('Supabase diagnostics:', diag);
+                    throw new Error(`Supabase is not configured. URL present: ${diag.supabaseUrlPresent}, Key present: ${diag.supabaseAnonKeyPresent}. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.`);
                 }
                 setAnalysisStatus('uploading');
                 const projectName = data.file.name?.replace('.zip', '') || 'Imported Project';
