@@ -107,9 +107,14 @@ export default function Home() {
     };
 
     const handleCloseModal = () => {
-        if (analysisStatus === 'ready' || analysisStatus === 'error') {
-            setAnalysisModalVisible(false);
-        }
+        setAnalysisModalVisible(false);
+        // Reset state after modal closes
+        setTimeout(() => {
+            setAnalysisStatus('idle');
+            setAnalysisProject(null);
+            setAnalysisError(null);
+            setUploadError(null);
+        }, 300);
     };
 
     const handleViewResults = () => {
