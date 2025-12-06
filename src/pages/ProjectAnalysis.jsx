@@ -51,15 +51,10 @@ export default function ProjectAnalysis() {
     const getProjectAsync = useProjectStore((state) => state.getProjectAsync);
     const updateProject = useProjectStore((state) => state.updateProject);
     
-    // Get project from store (will update when store changes)
+    // Use projectData as the source of truth (it has full analysis data)
+    // Fall back to store project for basic info
     const storeProject = projects.find(p => p.id === projectId);
-    
-    // Merge store data with loaded file data
-    const project = storeProject ? {
-        ...storeProject,
-        file_contents: projectData?.file_contents || {},
-        file_tree: projectData?.file_tree || []
-    } : projectData;
+    const project = projectData || storeProject;
 
     const tasksStore = useTaskStore((state) => state.tasks);
 

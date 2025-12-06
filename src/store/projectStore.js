@@ -38,11 +38,12 @@ const sanitizeProjectForStorage = (project) => {
     zip_file_url: project.zip_file_url,
     detected_stack: formatDetectedStack(project.detected_stack),
     summary: project.summary || '',
+    architecture: project.architecture || null,
     security_vulnerabilities: Array.isArray(project.security_vulnerabilities) ? project.security_vulnerabilities.slice(0, 50) : [],
     code_smells: Array.isArray(project.code_smells) ? project.code_smells.slice(0, 100) : [],
     test_suggestions: Array.isArray(project.test_suggestions) ? project.test_suggestions.slice(0, 50) : [],
     issues: Array.isArray(project.issues) ? project.issues.slice(0, 100) : [],
-    architecture: project.architecture || null,
+    analysis_strategy: project.analysis_strategy || null,
     file_contents_count: Object.keys(project.file_contents || {}).length,
     file_tree_count: Array.isArray(project.file_tree) ? project.file_tree.length : 0,
   };
