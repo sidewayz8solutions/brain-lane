@@ -36,7 +36,6 @@ import ArchitectureDiagram from '../components/visualization/ArchitectureDiagram
 import DependencyGraph from '../components/visualization/DependencyGraph';
 import ComplexityMetrics from '../components/visualization/ComplexityMetrics';
 import { useProjectStore, useTaskStore } from '@/store/projectStore';
-import { runProjectAnalysis } from '@/services/analysisService';
 
 export default function ProjectAnalysis() {
     const urlParams = new URLSearchParams(window.location.search);
