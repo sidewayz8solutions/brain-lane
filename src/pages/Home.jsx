@@ -8,7 +8,7 @@ import Logo from '../components/ui/Logo';
 import Footer from '../components/ui/Footer';
 import { createPageUrl } from '@/utils';
 import { useProjectStore } from '@/store/projectStore';
-import { UploadFile, ExtractZipContents, AnalyzeProjectStructure } from '@/api/integrations';
+import { UploadFile, ExtractZipContents, AnalyzeProjectStructure, UploadZipToSupabase } from '@/api/integrations';
 import { runProjectAnalysis } from '@/services/analysisService';
 import { OrbitalSpinner } from '@/components/ui/LoadingSpinner';
 
@@ -40,10 +40,23 @@ export default function Home() {
             if (data.type === 'zip' && data.file) {
                 console.log('Processing ZIP file:', data.file.name);
                 
-                // Upload and extract zip file
-                const uploadResult = await UploadFile({ file: data.file });
-                console.log('Upload result:', uploadResult);
-                fileUrl = uploadResult.file_url;
+                // Upload ZIP entries to Supabase Storage (streamed)
+                setAnalysisStatus('uploading');
+                const projectName = data.file.name?.replace('.zip', '') || 'Imported Project';
+                // Create project early to attach uploads under its ID
+                const tempProject = createProject({
+                    name: projectName,
+                    source_type: data.type,
+                    zip_file_url: null,
+                    status: 'uploading',
+                    file_tree: [],
+                    file_contents: {},
+                    detected_stack: []
+                });
+                setAnalysisProject(tempProject);
+                const supabaseResult = await UploadZipToSupabase({ file: data.file, projectId: tempProject.id });
+                console.log('Supabase upload result:', supabaseResult);
+                fileUrl = `supabase://${supabaseResult.bucket}/${tempProject.id}`;
 
                 // Extract and analyze contents
                 const extracted = await ExtractZipContents(data.file);
@@ -64,8 +77,9 @@ export default function Home() {
                 detectedStack = [];
             }
 
+            // Update the existing project with extracted tree/contents and status
             const project = createProject({
-                name: data.file?.name?.replace('.zip', '') || data.url?.split('/').pop() || 'Imported Project',
+                name: analysisProject?.name || data.file?.name?.replace('.zip', '') || data.url?.split('/').pop() || 'Imported Project',
                 source_type: data.type,
                 github_url: data.type === 'github' ? data.url : null,
                 zip_file_url: fileUrl,
@@ -74,8 +88,7 @@ export default function Home() {
                 file_contents: fileContents,
                 detected_stack: detectedStack
             });
-
-            console.log('Created project:', project);
+            console.log('Created/updated project:', project);
             setAnalysisProject(project);
 
             if (data.type === 'zip') {
@@ -161,7 +174,7 @@ export default function Home() {
     };
 
     const stats = [
-        { value: '1GB', label: 'Max Upload' },
+        { value: '2.5GB', label: 'Max Upload' },
         { value: '10+', label: 'Frameworks' },
         { value: '< 30s', label: 'Analysis Time' },
     ];

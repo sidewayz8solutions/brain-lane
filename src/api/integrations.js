@@ -14,6 +14,7 @@ export const ExtractZipContents = fileService.ExtractZipContents;
 export const ExtractDataFromUploadedFile = fileService.ExtractZipContents;
 export const AnalyzeProjectStructure = fileService.AnalyzeProjectStructure;
 export const CreateFileSignedUrl = fileService.CreateFileSignedUrl;
+export const UploadZipToSupabase = fileService.UploadZipToSupabase;
 
 // Placeholder for email - can integrate with Resend/SendGrid later
 export const SendEmail = async ({ to, subject, body }) => {
