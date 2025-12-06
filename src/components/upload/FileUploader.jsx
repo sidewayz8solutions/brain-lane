@@ -22,9 +22,9 @@ export default function FileUploader({ onUpload, isUploading }) {
     const glowX = useSpring(mouseX, { damping: 25, stiffness: 150 });
     const glowY = useSpring(mouseY, { damping: 25, stiffness: 150 });
 
-    // 500MB limit - enforced on frontend and backend
-    const MAX_SIZE_MB = 500;
-    const MAX_SIZE_BYTES = MAX_SIZE_MB * 1024 * 1024; // 524,288,000 bytes
+    // 1GB limit - enforced on frontend and backend
+    const MAX_SIZE_MB = 1024;
+    const MAX_SIZE_BYTES = MAX_SIZE_MB * 1024 * 1024; // 1,073,741,824 bytes
 
     // GitHub URL validation
     const isValidGitHubUrl = (url) => {

@@ -161,7 +161,7 @@ export default function Home() {
     };
 
     const stats = [
-        { value: '500MB', label: 'Max Upload' },
+        { value: '1GB', label: 'Max Upload' },
         { value: '10+', label: 'Frameworks' },
         { value: '< 30s', label: 'Analysis Time' },
     ];
