@@ -138,7 +138,15 @@ export const UploadZipToSupabase = async ({ file, projectId, bucket = (import.me
     try {
       // Stream file content into a Blob without loading entire ZIP in memory
       const blob = await entry.getData(new BlobWriter());
-      const objectPath = `${projectId}/${path}`;
+
+      // Sanitize path to avoid Supabase "Invalid key" errors
+      // Replace characters that are not alphanumeric, /, ., -, _ with _
+      const sanitizedPath = path.replace(/[^a-zA-Z0-9/._-]/g, '_');
+      if (path !== sanitizedPath) {
+        console.log(`Sanitized path: ${path} -> ${sanitizedPath}`);
+      }
+
+      const objectPath = `${projectId}/${sanitizedPath}`;
       const { error } = await supabase.storage.from(bucket).upload(objectPath, blob, {
         upsert: true,
         contentType: blob.type || 'application/octet-stream'
