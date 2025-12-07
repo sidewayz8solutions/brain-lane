@@ -90,7 +90,7 @@ export const useProjectStore = create(
           })
             .then(() => console.log('✅ Files saved to Supabase'))
             .catch((err) => console.warn('❌ Failed to save project files:', err));
-        } else {
+        } else if (project.status !== 'uploading') {
           console.warn('⚠️ No files to store!');
         }
 

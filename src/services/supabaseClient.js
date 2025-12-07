@@ -6,7 +6,7 @@ const env = (typeof import.meta !== 'undefined' && import.meta.env) || (typeof p
 // Support Vite and Next-style prefixes
 const supabaseUrl = env.VITE_SUPABASE_URL || env.NEXT_PUBLIC_SUPABASE_URL || env.SUPABASE_URL;
 const supabaseAnonKey = env.VITE_SUPABASE_ANON_KEY || env.NEXT_PUBLIC_SUPABASE_ANON_KEY || env.SUPABASE_ANON_KEY;
-const bucketName = env.VITE_SUPABASE_BUCKET || env.NEXT_PUBLIC_SUPABASE_BUCKET || 'projects';
+const bucketName = env.VITE_SUPABASE_BUCKET || env.NEXT_PUBLIC_SUPABASE_BUCKET || 'project-files';
 
 // Debug logs to help diagnose configuration issues
 if (typeof window !== 'undefined') {

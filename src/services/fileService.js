@@ -8,6 +8,11 @@ import { supabase, hasSupabase } from './supabaseClient';
 
 const fileStorage = new Map();
 
+const sanitizePath = (path) => {
+  // Replace characters that are not alphanumeric, /, ., -, _ with _
+  return path.replace(/[^a-zA-Z0-9/._-]/g, '_');
+};
+
 export const UploadFile = async ({ file }) => {
   const fileId = `file-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
   
@@ -61,8 +66,12 @@ export const ExtractZipContents = async (file) => {
     };
 
     for (const entry of entries) {
-      const path = entry.filename;
+      let path = entry.filename;
       if (path.startsWith('__MACOSX') || path.startsWith('.')) continue;
+      
+      // Sanitize path to match Supabase storage requirements
+      path = sanitizePath(path);
+      
       const isDir = entry.directory === true;
       const size = entry.uncompressedSize || 0;
 
@@ -108,7 +117,7 @@ export const ExtractZipContents = async (file) => {
 };
 
 // Upload all ZIP entries to Supabase Storage under a project folder, streaming per entry
-export const UploadZipToSupabase = async ({ file, projectId, bucket = (import.meta.env.VITE_SUPABASE_BUCKET || 'projects') }) => {
+export const UploadZipToSupabase = async ({ file, projectId, bucket = (import.meta.env.VITE_SUPABASE_BUCKET || 'project-files') }) => {
   if (!hasSupabase) {
     throw new Error('Supabase is not configured. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.');
   }
@@ -140,9 +149,8 @@ export const UploadZipToSupabase = async ({ file, projectId, bucket = (import.me
       const blob = await entry.getData(new BlobWriter());
 
       // Sanitize path to avoid Supabase "Invalid key" errors
-      // Replace characters that are not alphanumeric, /, ., -, _ with _
-      const sanitizedPath = path.replace(/[^a-zA-Z0-9/._-]/g, '_');
-      if (path !== sanitizedPath) {
+      const sanitizedPath = sanitizePath(path);
+      if (path !== sanitizedPath && errors.length < 5) {
         console.log(`Sanitized path: ${path} -> ${sanitizedPath}`);
       }
 
@@ -153,6 +161,9 @@ export const UploadZipToSupabase = async ({ file, projectId, bucket = (import.me
       });
       if (error) {
         console.error('Supabase upload error for', objectPath, error.message);
+        if (error.message.includes('row-level security policy')) {
+          console.warn('🚨 RLS Policy Error: Please run the SQL commands in SUPABASE_SETUP.sql in your Supabase SQL Editor.');
+        }
         errors.push({ path: objectPath, error: error.message });
       } else {
         uploaded.push(objectPath);
