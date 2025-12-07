@@ -63,7 +63,7 @@ Provide a DETAILED analysis including:
 - Integration tests needed
 - Suggested test cases with descriptions
 
-8. **COMPLETION TASKS** (10-20 tasks, prioritized):
+8. **COMPLETION TASKS** (15-25 tasks, prioritized and typed):
 - Features to complete
 - Bugs to fix
 - Security fixes (highest priority)
@@ -71,7 +71,23 @@ Provide a DETAILED analysis including:
 - Tests to add
 - Documentation needed
 
-You MUST populate the tasks array with at least 10 specific, actionable tasks. Each task MUST include: title, description, category, priority, estimated_effort, and files_affected.
+You MUST populate the tasks array with AT LEAST 15 specific, actionable tasks.
+
+Each task MUST include ALL of the following fields:
+- title
+- description
+- category (one of: feature, bugfix, refactor, test, documentation, security, infra)
+- type (one of: refactor, test, bugfix, feature, infra)
+- priority (one of: critical, high, medium, low)
+- estimated_effort (one of: small, medium, large)
+- files_affected (array of file paths)
+
+You MUST include at least:
+- 5 tasks where type = "refactor"
+- 3 tasks where type = "test"
+- 2 tasks where type = "infra" or category = "documentation"
+
+Never return an empty tasks array. If you are unsure, infer the most likely tasks from the code and issues.
 
 Be specific, actionable, and reference exact files/functions when possible.`;
 };
@@ -171,7 +187,14 @@ const responseSchema = {
         properties: {
           title: { type: 'string' },
           description: { type: 'string' },
-          category: { type: 'string', enum: ['feature', 'bugfix', 'refactor', 'test', 'documentation', 'security'] },
+          category: {
+            type: 'string',
+            enum: ['feature', 'bugfix', 'refactor', 'test', 'documentation', 'security', 'infra'],
+          },
+          type: {
+            type: 'string',
+            enum: ['refactor', 'test', 'bugfix', 'feature', 'infra'],
+          },
           priority: { type: 'string', enum: ['critical', 'high', 'medium', 'low'] },
           estimated_effort: { type: 'string', enum: ['small', 'medium', 'large'] },
           files_affected: { type: 'array', items: { type: 'string' } },
@@ -179,6 +202,84 @@ const responseSchema = {
       },
     },
   },
+};
+
+const normalizeTasks = (rawTasks, projectId) => {
+  if (!Array.isArray(rawTasks)) return [];
+
+  return rawTasks.map((task, index) => ({
+    id: task.id || `${projectId}-task-${index + 1}`,
+    project_id: projectId,
+    title: String(task.title || 'Untitled task'),
+    description: String(task.description || 'No description provided.'),
+    category: task.category || 'refactor',
+    type: task.type || 'refactor',
+    priority: task.priority || 'medium',
+    estimated_effort: task.estimated_effort || 'medium',
+    files_affected: Array.isArray(task.files_affected) ? task.files_affected : [],
+    status: task.status || 'pending',
+  }));
+};
+
+const buildHeuristicTasksFromProject = (project) => {
+  const tasks = [];
+
+  tasks.push({
+    title: 'Review overall project architecture',
+    description:
+      'Document current architecture, boundaries between modules, and key data flows to establish a baseline for refactoring.',
+    category: 'refactor',
+    type: 'refactor',
+    priority: 'high',
+    estimated_effort: 'medium',
+    files_affected: [],
+  });
+
+  tasks.push({
+    title: 'Add core integration tests for critical flows',
+    description:
+      'Identify the most important user journeys and add integration tests to cover them end-to-end.',
+    category: 'test',
+    type: 'test',
+    priority: 'high',
+    estimated_effort: 'medium',
+    files_affected: [],
+  });
+
+  tasks.push({
+    title: 'Introduce basic CI pipeline',
+    description:
+      'Set up a minimal CI pipeline that runs linting and tests on every push to the main branch.',
+    category: 'infra',
+    type: 'infra',
+    priority: 'medium',
+    estimated_effort: 'medium',
+    files_affected: [],
+  });
+
+  tasks.push({
+    title: 'Improve error handling in critical services',
+    description:
+      'Identify services with missing or weak error handling and add consistent error propagation and logging.',
+    category: 'refactor',
+    type: 'refactor',
+    priority: 'high',
+    estimated_effort: 'medium',
+    files_affected: [],
+  });
+
+  tasks.push({
+    title: 'Harden input validation and sanitization',
+    description:
+      'Review all user input points and ensure they are validated and sanitized to prevent common vulnerabilities.',
+    category: 'security',
+    type: 'bugfix',
+    priority: 'critical',
+    estimated_effort: 'small',
+    files_affected: [],
+  });
+
+  return tasks;
 };
 
 const collectImportantFiles = (fileContents) => {
@@ -303,20 +404,13 @@ export async function runProjectAnalysis(projectId) {
 
     projectStore.updateProject(projectId, payload);
 
-    console.log('📋 Creating tasks from analysis result. Tasks received:', analysisResult.tasks?.length || 0);
-    if (analysisResult.tasks?.length) {
-      analysisResult.tasks.forEach((task) => {
-        console.log('✏️ Creating task:', task.title, '| Priority:', task.priority, '| Category:', task.category);
-        taskStore.createTask({
-          project_id: projectId,
-          title: task.title,
-          description: task.description,
-          category: task.category,
-          priority: task.priority,
-          estimated_effort: task.estimated_effort,
-          files_affected: task.files_affected,
-          status: 'pending',
-        });
+    const normalizedTasks = normalizeTasks(analysisResult.tasks || [], projectId);
+
+    console.log('📋 Creating tasks from analysis result. Tasks received:', normalizedTasks.length);
+    if (normalizedTasks.length) {
+      normalizedTasks.forEach((task) => {
+        console.log('✏️ Creating task:', task.title, '| Priority:', task.priority, '| Category:', task.category, '| Type:', task.type);
+        taskStore.createTask(task);
       });
     } else {
       console.warn('⚠️ No tasks in analysis result');
@@ -336,31 +430,41 @@ export async function runProjectAnalysis(projectId) {
 
     console.log('✅ Analysis complete, updating project store');
 
-    let finalResult = analysisResult;
+    let finalResult = analysisResult || {};
 
-    // Fallback: if the main analysis returned no tasks, generate tasks separately
-    if (!analysisResult.tasks || analysisResult.tasks.length === 0) {
+    if (!Array.isArray(finalResult.tasks)) {
+      finalResult.tasks = [];
+    }
+
+    // Fallback 1: if the main analysis returned no tasks, generate tasks separately
+    if (!finalResult.tasks.length) {
       console.warn('⚠️ Analysis returned no tasks, generating tasks from summary + findings');
       try {
         const { GenerateTasks } = await import('@/services/aiService');
         const taskGenResult = await GenerateTasks({
-          summary: analysisResult.summary,
-          detected_stack: analysisResult.detected_stack,
-          architecture: analysisResult.architecture,
-          security_vulnerabilities: analysisResult.security_vulnerabilities,
-          code_smells: analysisResult.code_smells,
-          issues: analysisResult.issues,
+          summary: finalResult.summary,
+          detected_stack: finalResult.detected_stack,
+          architecture: finalResult.architecture,
+          security_vulnerabilities: finalResult.security_vulnerabilities,
+          code_smells: finalResult.code_smells,
+          issues: finalResult.issues,
         });
 
         if (taskGenResult?.tasks?.length) {
           console.log('✅ Fallback task generation produced', taskGenResult.tasks.length, 'tasks');
-          finalResult = { ...analysisResult, tasks: taskGenResult.tasks };
+          finalResult = { ...finalResult, tasks: taskGenResult.tasks };
         } else {
           console.warn('⚠️ Fallback task generation returned no tasks');
         }
       } catch (taskErr) {
         console.error('❌ Failed to generate tasks from analysis:', taskErr);
       }
+    }
+
+    // Fallback 2: if tasks are STILL empty, synthesize basic tasks from project metadata
+    if (!finalResult.tasks || !finalResult.tasks.length) {
+      console.warn('⚠️ No tasks from AI, synthesizing heuristic tasks');
+      finalResult.tasks = buildHeuristicTasksFromProject(projectData);
     }
 
     return persistAnalysis(finalResult);

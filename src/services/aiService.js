@@ -257,13 +257,33 @@ export const AnalyzeCode = async (code, language = 'javascript') => {
 
 export const GenerateTasks = async (projectAnalysis) => {
   return InvokeLLM({
-    prompt: `Based on this project analysis, generate implementation tasks:\n\n${JSON.stringify(projectAnalysis)}`,
+    prompt: `You are a senior tech lead. Based on this project analysis, generate a concrete implementation task plan to bring the project to completion.\n\nSTRICT REQUIREMENTS:\n- Return ONLY a JSON object that matches the provided JSON schema.\n- Populate the tasks array with AT LEAST 15 tasks.\n- Each task MUST include: title, description, category, type, priority, estimated_effort, files_affected.\n- category must be one of: feature, bugfix, refactor, test, documentation, security, infra.\n- type must be one of: refactor, test, bugfix, feature, infra.\n- Include at least 5 refactor tasks, 3 test tasks, and 2 infra or documentation tasks.\n\nPROJECT ANALYSIS:\n${JSON.stringify(projectAnalysis)}`,
     response_json_schema: {
-      type: 'object', 
+      type: 'object',
       properties: {
-        tasks: { type: 'array' }
-      }
-    }
+        tasks: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              title: { type: 'string' },
+              description: { type: 'string' },
+              category: {
+                type: 'string',
+                enum: ['feature', 'bugfix', 'refactor', 'test', 'documentation', 'security', 'infra'],
+              },
+              type: {
+                type: 'string',
+                enum: ['refactor', 'test', 'bugfix', 'feature', 'infra'],
+              },
+              priority: { type: 'string', enum: ['critical', 'high', 'medium', 'low'] },
+              estimated_effort: { type: 'string', enum: ['small', 'medium', 'large'] },
+              files_affected: { type: 'array', items: { type: 'string' } },
+            },
+          },
+        },
+      },
+    },
   });
 };
 
