@@ -1,0 +1,88 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Supabase Realtime Test</title>
+    <style>
+      body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; background:#0b1220; color:#e6eef8; padding:16px }
+      input, button { font-size:14px; padding:8px; margin:4px }
+      #log { background:#071025; padding:12px; border-radius:6px; height:300px; overflow:auto; white-space:pre-wrap }
+    </style>
+  </head>
+  <body>
+    <h2>Supabase Realtime Tester</h2>
+    <p>Open this page in two browser tabs to see realtime events arrive.</p>
+
+    <div>
+      <label>Supabase URL <input id="url" placeholder="https://xyz.supabase.co" size="40"/></label>
+    </div>
+    <div>
+      <label>Anon key <input id="key" placeholder="anon key" size="80"/></label>
+    </div>
+    <div>
+      <label>Task ID <input id="taskId" placeholder="task id (uuid)" size="40"/></label>
+    </div>
+    <div>
+      <button id="connect">Connect and subscribe</button>
+      <button id="send">Send test comment</button>
+    </div>
+
+    <h3>Log</h3>
+    <div id="log">Not connected</div>
+
+    <script type="module">
+      import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
+
+      const urlEl = document.getElementById('url');
+      const keyEl = document.getElementById('key');
+      const taskEl = document.getElementById('taskId');
+      const connectBtn = document.getElementById('connect');
+      const sendBtn = document.getElementById('send');
+      const log = document.getElementById('log');
+
+      let supabase;
+      let channel;
+
+      function append(txt) {
+        log.textContent += '\n' + txt;
+        log.scrollTop = log.scrollHeight;
+      }
+
+      connectBtn.addEventListener('click', async () => {
+        const url = urlEl.value.trim();
+        const key = keyEl.value.trim();
+        const taskId = taskEl.value.trim();
+        if (!url || !key || !taskId) {
+          alert('Enter url, key and task id');
+          return;
+        }
+        append('Creating client...');
+        supabase = createClient(url, key, { realtime: { params: { eventsPerSecond: 10 } } });
+
+        append('Fetching initial comments...');
+        const { data, error } = await supabase.from('comments').select('*').eq('task_id', taskId).order('created_at', { ascending: true });
+        if (error) append('Fetch error: ' + error.message);
+        else append('Initial rows: ' + (data?.length || 0));
+
+        append('Subscribing to postgres_changes for task_id=' + taskId);
+        channel = supabase
+          .channel('realtime-test-' + taskId)
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'comments', filter: `task_id=eq.${taskId}` }, (payload) => {
+            append('EVENT: ' + JSON.stringify(payload));
+          })
+          .subscribe();
+
+        append('Connected — now open in another tab and click Send test comment to see events');
+      });
+
+      sendBtn.addEventListener('click', async () => {
+        if (!supabase) { alert('Connect first'); return; }
+        const taskId = taskEl.value.trim();
+        const { data, error } = await supabase.from('comments').insert([{ task_id: taskId, author: 'realtime-tester', text: 'Test comment ' + new Date().toISOString() }]).select();
+        if (error) append('Insert error: ' + error.message);
+        else append('Inserted: ' + JSON.stringify(data?.[0]));
+      });
+    </script>
+  </body>
+</html>

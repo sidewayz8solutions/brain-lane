@@ -26,6 +26,7 @@ import {
     Bug
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { runCommandInWebContainer } from '@/services/webcontainerService';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
@@ -274,9 +275,15 @@ export default function CodeExecutionSandbox({ project, task, onExecutionComplet
     };
 
     const runTests = async () => {
+        // Prefer real execution via WebContainer when available
+        if (project && Object.keys(project.file_contents || {}).some(p => p.toLowerCase().endsWith('package.json'))) {
+            await runProjectCommand('npm', ['test']);
+            return;
+        }
+
         setIsRunning(true);
         clearLogs();
-        addLog('Starting test suite...', 'info');
+        addLog('Starting test suite (simulated)...', 'info');
 
         try {
             await new Promise(r => setTimeout(r, 500));
@@ -303,6 +310,37 @@ export default function CodeExecutionSandbox({ project, task, onExecutionComplet
 
         } catch (error) {
             addLog(`Test error: ${error.message}`, 'error');
+        } finally {
+            setIsRunning(false);
+        }
+    };
+
+    const runProjectCommand = async (cmd, args = []) => {
+        if (!project) {
+            addLog('No project loaded for execution', 'error');
+            return;
+        }
+
+        setIsRunning(true);
+        clearLogs();
+        addLog(`Running "${cmd} ${args.join(' ')}" in WebContainer...`, 'info');
+
+        try {
+            const res = await runCommandInWebContainer({
+                project,
+                command: cmd,
+                args,
+                onOutput: (chunk) => {
+                    const lines = String(chunk).split('\n');
+                    lines.filter(Boolean).forEach(line => addLog(line, 'info'));
+                }
+            });
+
+            addLog(`Command exited with code ${res.exitCode}`, res.exitCode === 0 ? 'success' : 'error');
+            setExecutionResult({ command: `${cmd} ${args.join(' ')}`, ...res });
+            onExecutionComplete?.(res);
+        } catch (err) {
+            addLog(`WebContainer error: ${err.message}`, 'error');
         } finally {
             setIsRunning(false);
         }

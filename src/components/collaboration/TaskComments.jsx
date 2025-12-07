@@ -17,6 +17,7 @@ import {
     User
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { getInitialComments, subscribeToComments, insertComment, updateComment, deleteComment } from '@/services/realtimeService';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -38,13 +39,26 @@ const agentAvatars = {
 function CommentItem({ comment, onReply, onEdit, onDelete, onReact }) {
     const [showReplyInput, setShowReplyInput] = useState(false);
     const [replyText, setReplyText] = useState('');
-    const avatar = agentAvatars[comment.author.type] || agentAvatars.user;
+    const [isEditing, setIsEditing] = useState(false);
+    const [editText, setEditText] = useState(comment.text || comment.content || comment.text);
+    const avatar = agentAvatars[(comment.author?.type) || 'user'] || agentAvatars.user;
 
     const handleReply = () => {
         if (replyText.trim()) {
             onReply(comment.id, replyText);
             setReplyText('');
             setShowReplyInput(false);
+        }
+    };
+
+    const handleSaveEdit = async () => {
+        const newText = editText.trim();
+        if (!newText) return;
+        setIsEditing(false);
+        try {
+            await onEdit(comment.id, newText);
+        } catch (err) {
+            console.error('Edit failed', err);
         }
     };
 
@@ -57,22 +71,37 @@ function CommentItem({ comment, onReply, onEdit, onDelete, onReact }) {
             <div className="flex gap-3">
                 <Avatar className="w-8 h-8 flex-shrink-0">
                     <AvatarFallback className={cn(avatar.bg, "text-white text-xs")}>
-                        {comment.author.type === 'user' ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
+                        {comment.author?.type === 'user' ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
                     </AvatarFallback>
                 </Avatar>
                 <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
-                        <span className="font-medium text-white text-sm">{comment.author.name}</span>
-                        {comment.author.type !== 'user' && (
+                        <span className="font-medium text-white text-sm">{comment.author?.name || comment.author}</span>
+                        {comment.author?.type !== 'user' && (
                             <Badge className="text-[9px] h-4 bg-slate-700 text-slate-400">Agent</Badge>
                         )}
-                        <span className="text-xs text-slate-500">{comment.timestamp}</span>
+                        <span className="text-xs text-slate-500">{comment.created_at || comment.timestamp}</span>
                         {comment.edited && <span className="text-xs text-slate-600">(edited)</span>}
                     </div>
                     
                     <div className="p-3 rounded-lg bg-slate-800/50 border border-slate-700/50">
-                        <p className="text-sm text-slate-300 whitespace-pre-wrap">{comment.content}</p>
-                        
+                        {!isEditing ? (
+                            <p className="text-sm text-slate-300 whitespace-pre-wrap">{comment.text || comment.content}</p>
+                        ) : (
+                            <div className="space-y-2">
+                                <textarea
+                                    className="w-full bg-slate-800 border border-slate-700 p-2 rounded text-sm text-white"
+                                    value={editText}
+                                    onChange={(e) => setEditText(e.target.value)}
+                                    rows={3}
+                                />
+                                <div className="flex gap-2">
+                                    <Button size="sm" onClick={handleSaveEdit} className="bg-cyan-600">Save</Button>
+                                    <Button size="sm" onClick={() => { setIsEditing(false); setEditText(comment.text || comment.content || ''); }} className="bg-slate-700">Cancel</Button>
+                                </div>
+                            </div>
+                        )}
+
                         {comment.mentions?.length > 0 && (
                             <div className="flex flex-wrap gap-1 mt-2">
                                 {comment.mentions.map((mention, idx) => (
@@ -90,7 +119,7 @@ function CommentItem({ comment, onReply, onEdit, onDelete, onReact }) {
                             onClick={() => onReact(comment.id, 'like')}
                             className={cn(
                                 "flex items-center gap-1 text-xs transition-colors",
-                                comment.reactions?.like > 0 ? "text-cyan-400" : "text-slate-500 hover:text-slate-300"
+                                (comment.reactions?.like || 0) > 0 ? "text-cyan-400" : "text-slate-500 hover:text-slate-300"
                             )}
                         >
                             <ThumbsUp className="w-3 h-3" />
@@ -103,7 +132,7 @@ function CommentItem({ comment, onReply, onEdit, onDelete, onReact }) {
                             <Reply className="w-3 h-3" />
                             Reply
                         </button>
-                        {comment.author.type === 'user' && (
+                        {comment.author?.type === 'user' && (
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                     <button className="text-slate-500 hover:text-slate-300">
@@ -111,7 +140,7 @@ function CommentItem({ comment, onReply, onEdit, onDelete, onReact }) {
                                     </button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent className="bg-slate-900 border-slate-700">
-                                    <DropdownMenuItem onClick={() => onEdit(comment)} className="text-xs">
+                                    <DropdownMenuItem onClick={() => setIsEditing(true)} className="text-xs">
                                         <Edit2 className="w-3 h-3 mr-2" />
                                         Edit
                                     </DropdownMenuItem>
@@ -169,36 +198,45 @@ function CommentItem({ comment, onReply, onEdit, onDelete, onReact }) {
 }
 
 export default function TaskComments({ taskId, stepId, initialComments = [] }) {
-    const [comments, setComments] = useState(initialComments.length > 0 ? initialComments : [
-        {
-            id: 1,
-            author: { name: 'Architect Agent', type: 'architect' },
-            content: 'I recommend splitting this function into smaller modules for better maintainability.',
-            timestamp: '2 hours ago',
-            reactions: { like: 2 },
-            mentions: [],
-            replies: [
-                {
-                    id: 2,
-                    author: { name: 'You', type: 'user' },
-                    content: 'Good point. Should we create a separate utils file?',
-                    timestamp: '1 hour ago',
-                    reactions: { like: 1 }
-                }
-            ]
-        },
-        {
-            id: 3,
-            author: { name: 'Security Agent', type: 'security' },
-            content: '@testing Please verify the input validation on this endpoint.',
-            timestamp: '30 mins ago',
-            reactions: {},
-            mentions: ['testing']
-        }
-    ]);
+    const [comments, setComments] = useState(initialComments.length > 0 ? initialComments : []);
     const [newComment, setNewComment] = useState('');
     const [showMentions, setShowMentions] = useState(false);
     const inputRef = useRef(null);
+
+    // Load initial comments and subscribe to realtime updates for this task
+    useEffect(() => {
+        let cleanup;
+        let mounted = true;
+
+        (async () => {
+            try {
+                const initial = await getInitialComments({ taskId });
+                if (!mounted) return;
+                setComments(initial || []);
+            } catch (err) {
+                console.error('Failed to load comments', err);
+            }
+
+            cleanup = subscribeToComments({ taskId }, (payload) => {
+                const ev = payload.eventType || payload.type || payload.event;
+                const record = payload.new || payload.record || payload.new_record || payload;
+                if (!record) return;
+
+                if (ev === 'INSERT' || ev === 'INSERT') {
+                    setComments((prev) => [...prev, record]);
+                } else if (ev === 'UPDATE') {
+                    setComments((prev) => prev.map((c) => (c.id === record.id ? record : c)));
+                } else if (ev === 'DELETE') {
+                    setComments((prev) => prev.filter((c) => c.id !== (payload.old?.id || record.id)));
+                }
+            });
+        })();
+
+        return () => {
+            mounted = false;
+            cleanup && cleanup();
+        };
+    }, [taskId]);
 
     const agents = [
         { id: 'architect', name: 'Architect Agent' },
@@ -209,21 +247,21 @@ export default function TaskComments({ taskId, stepId, initialComments = [] }) {
 
     const handleSubmit = () => {
         if (!newComment.trim()) return;
-
-        const mentions = newComment.match(/@(\w+)/g)?.map(m => m.slice(1)) || [];
-        
-        const comment = {
-            id: Date.now(),
-            author: { name: 'You', type: 'user' },
-            content: newComment,
-            timestamp: 'Just now',
-            reactions: {},
-            mentions,
-            replies: []
-        };
-
-        setComments(prev => [...prev, comment]);
+        // use realtimeService to insert comment with task_id
+        const text = newComment.trim();
         setNewComment('');
+        (async () => {
+            try {
+                const { insertComment } = await import('@/services/realtimeService');
+                const created = await insertComment({ task_id: taskId, author: 'You', text });
+                // optimistic append if server returns created row
+                if (created) setComments(prev => [...prev, created]);
+            } catch (err) {
+                console.error('Failed to post comment', err);
+                // restore text so user can retry
+                setNewComment(text);
+            }
+        })();
     };
 
     const handleReply = (parentId, text) => {
@@ -255,6 +293,28 @@ export default function TaskComments({ taskId, stepId, initialComments = [] }) {
         }));
     };
 
+    // Edit a comment via realtimeService
+    const handleEdit = async (commentId, newText) => {
+        // optimistic update
+        setComments(prev => prev.map(c => c.id === commentId ? { ...c, text: newText, edited: true } : c));
+        try {
+            await updateComment(commentId, { text: newText, edited: true });
+        } catch (err) {
+            console.error('Failed to update comment', err);
+        }
+    };
+
+    // Delete a comment
+    const handleDelete = async (commentId) => {
+        // optimistic remove
+        setComments(prev => prev.filter(c => c.id !== commentId));
+        try {
+            await deleteComment(commentId);
+        } catch (err) {
+            console.error('Failed to delete comment', err);
+        }
+    };
+
     const insertMention = (agentId) => {
         setNewComment(prev => prev + `@${agentId} `);
         setShowMentions(false);
@@ -272,14 +332,14 @@ export default function TaskComments({ taskId, stepId, initialComments = [] }) {
             {/* Comments List */}
             <div className="flex-1 overflow-y-auto p-3 space-y-4">
                 {comments.map(comment => (
-                    <CommentItem
-                        key={comment.id}
-                        comment={comment}
-                        onReply={handleReply}
-                        onEdit={(c) => console.log('Edit:', c)}
-                        onDelete={(id) => setComments(prev => prev.filter(c => c.id !== id))}
-                        onReact={handleReact}
-                    />
+                        <CommentItem
+                            key={comment.id}
+                            comment={comment}
+                            onReply={handleReply}
+                            onEdit={handleEdit}
+                            onDelete={handleDelete}
+                            onReact={handleReact}
+                        />
                 ))}
             </div>
 

@@ -2,104 +2,110 @@ import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Terminal, X, Maximize2, Minimize2, Copy, Check, FileCode, Folder, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { runCommandInWebContainer } from '@/services/webcontainerService';
 import { Button } from '@/components/ui/button';
 
 const commandSimulations = {
     'npm test': {
-        output: [
-            '\x1b[36m> project@1.0.0 test\x1b[0m',
-            '\x1b[36m> jest --coverage\x1b[0m',
-            '',
-            '\x1b[32mPASS\x1b[0m  src/utils.test.js',
-            '  ✓ should format date correctly (3ms)',
-            '  ✓ should validate email (1ms)',
-            '  ✓ should parse JSON safely (2ms)',
-            '',
-            '\x1b[32mPASS\x1b[0m  src/components/Button.test.js',
-            '  ✓ renders correctly (15ms)',
-            '  ✓ handles click events (8ms)',
-            '  ✓ applies disabled state (4ms)',
-            '',
-            '----------|---------|----------|---------|---------|',
-            'File      | % Stmts | % Branch | % Funcs | % Lines |',
-            '----------|---------|----------|---------|---------|',
-            'All files |   87.5  |   82.3   |   91.2  |   86.8  |',
-            '----------|---------|----------|---------|---------|',
-            '',
-            '\x1b[32mTest Suites: 2 passed, 2 total\x1b[0m',
-            '\x1b[32mTests:       6 passed, 6 total\x1b[0m',
-            'Snapshots:   0 total',
-            'Time:        2.341s'
-        ],
-        exitCode: 0
-    },
-    'npm run lint': {
-        output: [
-            '\x1b[36m> project@1.0.0 lint\x1b[0m',
-            '\x1b[36m> eslint src/ --ext .js,.jsx,.ts,.tsx\x1b[0m',
-            '',
-            '\x1b[32m✓ No linting errors found in 24 files\x1b[0m'
-        ],
-        exitCode: 0
-    },
-    'npm run build': {
-        output: [
-            '\x1b[36m> project@1.0.0 build\x1b[0m',
-            '\x1b[36m> vite build\x1b[0m',
-            '',
-            'vite v5.0.0 building for production...',
-            '✓ 1247 modules transformed.',
-            '',
-            'dist/index.html                  0.45 kB │ gzip:  0.29 kB',
-            'dist/assets/index-DiwrgTda.css  22.15 kB │ gzip:  4.82 kB',
-            'dist/assets/index-A3zfJ7Dq.js  187.32 kB │ gzip: 61.24 kB',
-            '',
-            '\x1b[32m✓ built in 3.42s\x1b[0m'
-        ],
-        exitCode: 0
-    },
-    'pytest': {
-        output: [
-            '\x1b[36m============================= test session starts =============================\x1b[0m',
-            'platform linux -- Python 3.11.0, pytest-7.4.0, pluggy-1.3.0',
-            'rootdir: /workspace/project',
-            'plugins: cov-4.1.0, asyncio-0.21.1',
-            'collected 12 items',
-            '',
-            'tests/test_api.py \x1b[32m....\x1b[0m                                                  [ 33%]',
-            'tests/test_models.py \x1b[32m....\x1b[0m                                              [ 66%]',
-            'tests/test_utils.py \x1b[32m....\x1b[0m                                               [100%]',
-            '',
-            '---------- coverage: platform linux, python 3.11.0 ----------',
-            'Name                 Stmts   Miss  Cover',
-            '-----------------------------------------',
-            'src/api.py              45      3    93%',
-            'src/models.py           62      5    92%',
-            'src/utils.py            28      2    93%',
-            '-----------------------------------------',
-            'TOTAL                  135     10    93%',
-            '',
-            '\x1b[32m============================== 12 passed in 1.23s ==============================\x1b[0m'
-        ],
-        exitCode: 0
-    },
-    'npm install': {
-        output: [
-            '\x1b[36madded 1247 packages in 12s\x1b[0m',
-            '',
-            '142 packages are looking for funding',
-            '  run `npm fund` for details',
-            '',
-            'found 0 vulnerabilities'
-        ],
-        exitCode: 0
-    },
-    'git status': {
-        output: [
-            'On branch feature/ai-implementation',
-            'Changes to be committed:',
-            '  (use "git restore --staged <file>..." to unstage)',
-            '\x1b[32m        modified:   src/components/Button.jsx\x1b[0m',
+        setIsRunning(true);
+        setCommandHistory(prev => [...prev, cmd]);
+        setHistoryIndex(-1);
+
+        setHistory(prev => [...prev, { type: 'command', content: cmd }]);
+        await new Promise(resolve => setTimeout(resolve, 300));
+
+        // Handle special commands
+        if (cmd === 'clear' || cmd === 'cls') {
+            setHistory([]);
+            setIsRunning(false);
+            return 0;
+        }
+
+        if (cmd === 'help') {
+            const helpOutput = [
+                'Available commands:',
+                '  npm test       - Run tests',
+                '  npm run lint   - Run linter',
+                '  npm run build  - Build project',
+                '  npm install    - Install dependencies',
+                '  pytest         - Run Python tests',
+                '  git status     - Show git status',
+                '  git diff --stat - Show changes',
+                '  ls -la         - List files',
+                '  clear          - Clear terminal',
+                '  help           - Show this help'
+            ];
+            for (const line of helpOutput) {
+                setHistory(prev => [...prev, { type: 'output', content: line }]);
+            }
+            setIsRunning(false);
+            return 0;
+        }
+
+        const isWebContainerCandidate = (project) => {
+            if (!project) return false;
+            const files = Object.keys(project.file_contents || {});
+            return files.some((p) => p.toLowerCase().endsWith('package.json'));
+        };
+
+        // If we have a Node project, try real execution via WebContainers
+        const shouldUseWebContainer = isWebContainerCandidate(project);
+
+        if (shouldUseWebContainer) {
+            try {
+                const [bin, ...rawArgs] = cmd.split(' ').filter(Boolean);
+                const onOutput = (chunk) => {
+                    const lines = String(chunk).split('\n');
+                    setHistory(prev => [
+                        ...prev,
+                        ...lines.filter(Boolean).map((line) => ({ type: 'output', content: line })),
+                    ]);
+                };
+
+                const result = await runCommandInWebContainer({
+                    project,
+                    command: bin,
+                    args: rawArgs,
+                    onOutput,
+                });
+
+                setHistory(prev => [
+                    ...prev,
+                    { type: 'output', content: `\n[brain-lane] Process exited with code ${result.exitCode}` },
+                ]);
+                setIsRunning(false);
+                onCommandComplete?.(cmd, result.exitCode);
+                return result.exitCode;
+            } catch (err) {
+                setHistory(prev => [
+                    ...prev,
+                    { type: 'output', content: `[brain-lane] WebContainer error: ${err.message}` },
+                    { type: 'output', content: '[brain-lane] Falling back to simulated output, if available.' },
+                ]);
+                // fall through to simulation below
+            }
+        }
+
+        // Fallback: existing simulations
+        const simulation = commandSimulations[cmd];
+        if (simulation) {
+            for (const line of simulation.output) {
+                setHistory(prev => [...prev, { type: 'output', content: line }]);
+                await new Promise(resolve => setTimeout(resolve, 50));
+            }
+            setIsRunning(false);
+            onCommandComplete?.(cmd, simulation.exitCode);
+            return simulation.exitCode;
+        }
+
+        setHistory(prev => [
+            ...prev,
+            { type: 'output', content: `Command not recognized: ${cmd}` },
+            { type: 'output', content: 'Type "help" to see available commands.' },
+        ]);
+        setIsRunning(false);
+        onCommandComplete?.(cmd, 1);
+        return 1;
             '\x1b[32m        modified:   src/utils/helpers.js\x1b[0m',
             '\x1b[32m        new file:   src/components/NewFeature.jsx\x1b[0m',
             ''
