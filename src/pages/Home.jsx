@@ -60,9 +60,17 @@ export default function Home() {
                     detected_stack: []
                 });
                 setAnalysisProject(tempProject);
-                const supabaseResult = await UploadZipToSupabase({ file: data.file, projectId: tempProject.id });
-                console.log('Supabase upload result:', supabaseResult);
-                fileUrl = `supabase://${supabaseResult.bucket}/${tempProject.id}`;
+                try {
+                    const supabaseResult = await UploadZipToSupabase({ file: data.file, projectId: tempProject.id });
+                    console.log('Supabase upload result:', supabaseResult);
+                    if (supabaseResult?.errors?.length) {
+                        console.warn('Supabase upload completed with errors:', supabaseResult.errors.slice(0, 5));
+                    }
+                    fileUrl = `supabase://${supabaseResult.bucket}/${tempProject.id}`;
+                } catch (supabaseErr) {
+                    console.error('Supabase upload failed, continuing with local analysis only:', supabaseErr);
+                    // Do not block analysis just because remote storage failed
+                }
 
                 // Extract and analyze contents
                 const extracted = await ExtractZipContents(data.file);

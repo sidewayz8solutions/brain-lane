@@ -130,7 +130,26 @@ export const UploadZipToSupabase = async ({ file, projectId, bucket = (import.me
   const skipped = [];
 
   // Skip heavy folders that shouldn't be uploaded
-  const skipFolders = ['node_modules/', 'dist/', 'build/', '.git/', 'vendor/', '__pycache__/', '.next/', '.nuxt/', '.cache/'];
+  const skipFolders = [
+    'node_modules/',
+    'dist/',
+    'build/',
+    '.git/',
+    'vendor/',
+    '__pycache__/',
+    '.next/',
+    '.nuxt/',
+    '.cache/',
+    // Mobile / desktop build artifacts
+    'Pods/',
+    'DerivedData/',
+    'xcuserdata/',
+    'Gradle/',
+  ];
+
+  // Hard cap on number of files we will attempt to upload
+  const MAX_UPLOAD_FILES = 2000;
+  let uploadCount = 0;
 
   for (const entry of entries) {
     const path = entry.filename;
@@ -138,8 +157,14 @@ export const UploadZipToSupabase = async ({ file, projectId, bucket = (import.me
     if (isDir) continue; // storage only for files
     if (path.startsWith('__MACOSX') || path.startsWith('.')) continue;
 
-    // Skip node_modules and other heavy folders
+    // Skip node_modules and other heavy / build folders
     if (skipFolders.some(folder => path.includes(folder))) {
+      skipped.push(path);
+      continue;
+    }
+
+    // Enforce a hard cap on number of files to upload to avoid hangs
+    if (uploadCount >= MAX_UPLOAD_FILES) {
       skipped.push(path);
       continue;
     }
@@ -167,6 +192,7 @@ export const UploadZipToSupabase = async ({ file, projectId, bucket = (import.me
         errors.push({ path: objectPath, error: error.message });
       } else {
         uploaded.push(objectPath);
+        uploadCount += 1;
       }
     } catch (e) {
       console.warn('Failed to stream and upload entry:', path, e);
