@@ -71,6 +71,8 @@ Provide a DETAILED analysis including:
 - Tests to add
 - Documentation needed
 
+You MUST populate the tasks array with at least 10 specific, actionable tasks. Each task MUST include: title, description, category, priority, estimated_effort, and files_affected.
+
 Be specific, actionable, and reference exact files/functions when possible.`;
 };
 
@@ -333,7 +335,35 @@ export async function runProjectAnalysis(projectId) {
     });
 
     console.log('✅ Analysis complete, updating project store');
-    return persistAnalysis(analysisResult);
+
+    let finalResult = analysisResult;
+
+    // Fallback: if the main analysis returned no tasks, generate tasks separately
+    if (!analysisResult.tasks || analysisResult.tasks.length === 0) {
+      console.warn('⚠️ Analysis returned no tasks, generating tasks from summary + findings');
+      try {
+        const { GenerateTasks } = await import('@/services/aiService');
+        const taskGenResult = await GenerateTasks({
+          summary: analysisResult.summary,
+          detected_stack: analysisResult.detected_stack,
+          architecture: analysisResult.architecture,
+          security_vulnerabilities: analysisResult.security_vulnerabilities,
+          code_smells: analysisResult.code_smells,
+          issues: analysisResult.issues,
+        });
+
+        if (taskGenResult?.tasks?.length) {
+          console.log('✅ Fallback task generation produced', taskGenResult.tasks.length, 'tasks');
+          finalResult = { ...analysisResult, tasks: taskGenResult.tasks };
+        } else {
+          console.warn('⚠️ Fallback task generation returned no tasks');
+        }
+      } catch (taskErr) {
+        console.error('❌ Failed to generate tasks from analysis:', taskErr);
+      }
+    }
+
+    return persistAnalysis(finalResult);
   } catch (error) {
     console.error('❌ Analysis failed:', error);
 
