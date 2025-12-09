@@ -1,91 +1,4 @@
-// Lightweight WebContainer service wrapper
-// Dynamically imports the @webcontainer/api when available and provides helpers
-// to write files and run commands inside the in-browser container.
-
-let webcontainer = null;
-let container = null;
-
-export async function ensureWebContainer() {
-    if (container) return container;
-    try {
-        const { WebContainer } = await import('@webcontainer/api');
-        webcontainer = WebContainer;
-        container = await WebContainer.boot();
-        return container;
-    } catch (err) {
-        throw new Error('WebContainer API not available. Install @webcontainer/api and run in a supported browser. ' + err.message);
-    }
-}
-
-export async function loadProjectIntoWebContainer(project) {
-    const c = await ensureWebContainer();
-
-    const files = project.file_contents || {};
-    const writePromises = Object.entries(files).map(async ([path, content]) => {
-        const dir = path.split('/').slice(0, -1).join('/') || '/';
-        try {
-            await c.fs.mkdir(dir, { recursive: true });
-        } catch (e) {
-            // ignore
-        }
-        await c.fs.writeFile(path, content);
-    });
-
-    await Promise.all(writePromises);
-    return c;
-}
-
-export async function runCommandInWebContainer({ project, command = 'npm', args = ['run', 'start'], onOutput }) {
-    const c = await loadProjectIntoWebContainer(project);
-
-    // Ensure node_modules exists by running install if package.json present
-    try {
-        if (project.file_contents && Object.keys(project.file_contents).some(p => p.endsWith('package.json'))) {
-            const install = await c.spawn('bash', ['-lc', 'npm install --no-audit --no-fund'], {
-                stdout: 'pipe',
-                stderr: 'pipe'
-            });
-
-            install.output.pipeTo(new WritableStream({
-                write(chunk) { onOutput?.(chunk); }
-            }));
-
-            await install.exit;
-        }
-    } catch (err) {
-        // continue; sometimes installs fail in constrained envs
-        onOutput?.(`Install step failed: ${err.message}`);
-    }
-
-    // Run the requested command
-    const spawned = await c.spawn('bash', ['-lc', [command, ...args].join(' ')], {
-        stdout: 'pipe',
-        stderr: 'pipe'
-    });
-
-    const reader = spawned.output.getReader();
-    const decoder = new TextDecoder();
-
-    const streamLoop = async () => {
-        while (true) {
-            const { value, done } = await reader.read();
-            if (done) break;
-            const text = decoder.decode(value);
-            onOutput?.(text);
-        }
-    };
-
-    const p = streamLoop();
-    const exitCode = await spawned.exit;
-    await p;
-
-    return { exitCode };
-}
-
-export function isWebContainerAvailable() {
-    return !!container;
-}
-// Minimal WebContainer service wrapper. Uses dynamic import so builds won't fail when the
+// WebContainer service wrapper. Uses dynamic import so builds won't fail when the
 // @webcontainer/api package is not installed in environments where it's unsupported.
 let containerInstance = null;
 let loadedProjectId = null;
@@ -200,7 +113,12 @@ export async function runCommandInWebContainer({ project, command, args = [], on
   return execWithStreaming(container, command, args, onOutput);
 }
 
+export function isWebContainerAvailable() {
+  return !!containerInstance;
+}
+
 export default {
   loadProjectIntoWebContainer,
   runCommandInWebContainer,
+  isWebContainerAvailable,
 };
