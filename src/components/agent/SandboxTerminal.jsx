@@ -7,107 +7,24 @@ import { Button } from '@/components/ui/button';
 
 const commandSimulations = {
     'npm test': {
-        setIsRunning(true);
-        setCommandHistory(prev => [...prev, cmd]);
-        setHistoryIndex(-1);
-
-        setHistory(prev => [...prev, { type: 'command', content: cmd }]);
-        await new Promise(resolve => setTimeout(resolve, 300));
-
-        // Handle special commands
-        if (cmd === 'clear' || cmd === 'cls') {
-            setHistory([]);
-            setIsRunning(false);
-            return 0;
-        }
-
-        if (cmd === 'help') {
-            const helpOutput = [
-                'Available commands:',
-                '  npm test       - Run tests',
-                '  npm run lint   - Run linter',
-                '  npm run build  - Build project',
-                '  npm install    - Install dependencies',
-                '  pytest         - Run Python tests',
-                '  git status     - Show git status',
-                '  git diff --stat - Show changes',
-                '  ls -la         - List files',
-                '  clear          - Clear terminal',
-                '  help           - Show this help'
-            ];
-            for (const line of helpOutput) {
-                setHistory(prev => [...prev, { type: 'output', content: line }]);
-            }
-            setIsRunning(false);
-            return 0;
-        }
-
-        const isWebContainerCandidate = (project) => {
-            if (!project) return false;
-            const files = Object.keys(project.file_contents || {});
-            return files.some((p) => p.toLowerCase().endsWith('package.json'));
-        };
-
-        // If we have a Node project, try real execution via WebContainers
-        const shouldUseWebContainer = isWebContainerCandidate(project);
-
-        if (shouldUseWebContainer) {
-            try {
-                const [bin, ...rawArgs] = cmd.split(' ').filter(Boolean);
-                const onOutput = (chunk) => {
-                    const lines = String(chunk).split('\n');
-                    setHistory(prev => [
-                        ...prev,
-                        ...lines.filter(Boolean).map((line) => ({ type: 'output', content: line })),
-                    ]);
-                };
-
-                const result = await runCommandInWebContainer({
-                    project,
-                    command: bin,
-                    args: rawArgs,
-                    onOutput,
-                });
-
-                setHistory(prev => [
-                    ...prev,
-                    { type: 'output', content: `\n[brain-lane] Process exited with code ${result.exitCode}` },
-                ]);
-                setIsRunning(false);
-                onCommandComplete?.(cmd, result.exitCode);
-                return result.exitCode;
-            } catch (err) {
-                setHistory(prev => [
-                    ...prev,
-                    { type: 'output', content: `[brain-lane] WebContainer error: ${err.message}` },
-                    { type: 'output', content: '[brain-lane] Falling back to simulated output, if available.' },
-                ]);
-                // fall through to simulation below
-            }
-        }
-
-        // Fallback: existing simulations
-        const simulation = commandSimulations[cmd];
-        if (simulation) {
-            for (const line of simulation.output) {
-                setHistory(prev => [...prev, { type: 'output', content: line }]);
-                await new Promise(resolve => setTimeout(resolve, 50));
-            }
-            setIsRunning(false);
-            onCommandComplete?.(cmd, simulation.exitCode);
-            return simulation.exitCode;
-        }
-
-        setHistory(prev => [
-            ...prev,
-            { type: 'output', content: `Command not recognized: ${cmd}` },
-            { type: 'output', content: 'Type "help" to see available commands.' },
-        ]);
-        setIsRunning(false);
-        onCommandComplete?.(cmd, 1);
-        return 1;
-            '\x1b[32m        modified:   src/utils/helpers.js\x1b[0m',
-            '\x1b[32m        new file:   src/components/NewFeature.jsx\x1b[0m',
+        output: [
+            '> project@1.0.0 test',
+            '> jest --coverage',
+            '',
+            ' PASS  src/components/Button.test.jsx',
+            ' PASS  src/utils/helpers.test.js',
+            '-------------------|---------|----------|---------|---------|-------------------',
+            'File               | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s ',
+            '-------------------|---------|----------|---------|---------|-------------------',
+            'All files          |     92% |    85.71 |   90.91 |   92.45 |                   ',
+            ' src/components    |     90% |       80 |      90 |    90.5 |                   ',
+            ' src/utils         |      95 |       90 |     100 |      95 |                   ',
+            '-------------------|---------|----------|---------|---------|-------------------',
+            '',
+            'Test Suites: 2 passed, 2 total',
+            'Tests:       10 passed, 10 total',
+            'Snapshots:   0 total',
+            'Time:        2.345 s',
             ''
         ],
         exitCode: 0

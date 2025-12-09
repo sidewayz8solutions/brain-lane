@@ -10,6 +10,14 @@ import Projects from "./Projects";
 
 import ProjectHealth from "./ProjectHealth";
 
+import Settings from "./Settings";
+
+import Visualization from "./Visualization";
+
+import Deployment from "./Deployment";
+
+import Agents from "./Agents";
+
 import { BrowserRouter as Router, Route, Routes, useLocation } from 'react-router-dom';
 
 const PAGES = {
@@ -23,6 +31,14 @@ const PAGES = {
     Projects: Projects,
     
     ProjectHealth: ProjectHealth,
+
+    Settings: Settings,
+
+    Visualization: Visualization,
+
+    Deployment: Deployment,
+
+    Agents: Agents,
     
 }
 
@@ -53,6 +69,10 @@ function PagesContent() {
                 <Route path="/taskview" element={<TaskView />} />
                 <Route path="/projects" element={<Projects />} />
                 <Route path="/projecthealth" element={<ProjectHealth />} />
+                <Route path="/settings" element={<Settings />} />
+                <Route path="/visualization" element={<Visualization />} />
+                <Route path="/deployment" element={<Deployment />} />
+                <Route path="/agents" element={<Agents />} />
             </Routes>
         </Layout>
     );

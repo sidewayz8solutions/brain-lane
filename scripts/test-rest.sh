@@ -1,5 +1,4 @@
-#!/usr/bin/env bash
-set -euo pipefail
+#!/usr/biset -euo pipefail
 
 # Usage:
 # SUPABASE_URL=https://<project>.supabase.co SUPABASE_ANON_KEY=<anon> TASK_ID=<task-uuid> ./scripts/test-rest.sh

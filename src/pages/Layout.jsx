@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
-import { Brain, FolderGit2, Home, Menu, X } from 'lucide-react';
+import { Brain, FolderGit2, Home, Menu, X, Settings, Network, Rocket, Bot } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Logo from '../components/ui/Logo';
 
@@ -23,6 +23,10 @@ export default function Layout({ children, currentPageName }) {
         { name: 'Home', icon: Home, page: 'Home' },
         { name: 'Projects', icon: FolderGit2, page: 'Projects' },
         { name: 'Health', icon: Brain, page: 'ProjectHealth' },
+        { name: 'Agents', icon: Bot, page: 'Agents' },
+        { name: 'Visualization', icon: Network, page: 'Visualization' },
+        { name: 'Deployment', icon: Rocket, page: 'Deployment' },
+        { name: 'Settings', icon: Settings, page: 'Settings' },
     ];
 
     return (

@@ -3,6 +3,8 @@ import ReactDOM from 'react-dom/client'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import App from '@/App.jsx'
 import '@/index.css'
+import { AuthProvider } from '@/components/auth/AuthProvider'
+import ErrorBoundary from '@/components/ui/ErrorBoundary'
 
 // Filter out Chrome extension errors (harmless but annoying)
 const originalError = console.error;
@@ -87,7 +89,11 @@ const queryClient = new QueryClient({
 })
 
 ReactDOM.createRoot(document.getElementById('root')).render(
-  <QueryClientProvider client={queryClient}>
-    <App />
-  </QueryClientProvider>
+  <ErrorBoundary>
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <App />
+      </AuthProvider>
+    </QueryClientProvider>
+  </ErrorBoundary>
 )
