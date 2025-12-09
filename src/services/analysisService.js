@@ -3,11 +3,11 @@ import { InvokeLLM } from '@/services/aiService';
 
 const IMPORTANT_PATHS = ['package.json', 'requirements.txt', 'README.md', 'setup.py', 'pyproject.toml'];
 const CODE_EXTENSIONS = ['.js', '.jsx', '.ts', '.tsx', '.py'];
-const MAX_IMPORTANT_FILES = 4;
-const MAX_IMPORTANT_CHARS = 3000;
-const MAX_SAMPLE_FILES = 5;
-const MAX_CODE_CHARS = 2000;
-const MAX_FILE_LIST_ENTRIES = 200;
+const MAX_IMPORTANT_FILES = 3;
+const MAX_IMPORTANT_CHARS = 2000;
+const MAX_SAMPLE_FILES = 4;
+const MAX_CODE_CHARS = 1500;
+const MAX_FILE_LIST_ENTRIES = 100;
 const CONTEXT_ERROR_PATTERNS = ['context length', 'token limit', 'maximum context', 'too many tokens', 'request too large'];
 
 const buildAnalysisPrompt = (projectData, fileList, importantFiles, sampleCode) => {

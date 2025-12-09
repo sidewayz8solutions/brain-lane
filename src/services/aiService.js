@@ -219,9 +219,15 @@ export const InvokeLLM = async ({ prompt, response_json_schema, add_context_from
     return content;
   } catch (error) {
     console.error('❌ AI Service Error:', error.message);
-    // Provide clearer guidance for common network errors
+    // Provide clearer guidance for common errors
     if (error?.message?.includes('Failed to fetch') || error?.message?.includes('ERR_NETWORK_CHANGED')) {
-      throw new Error('Network error while contacting OpenAI. Please check your connection and try again. The app will retry automatically, but if the issue persists, refresh the page.');
+      throw new Error('Network error while contacting OpenAI. Please check your connection and try again.');
+    }
+    if (error?.message?.includes('504') || error?.message?.includes('TIMEOUT') || error?.message?.includes('timed out')) {
+      throw new Error('Analysis timed out. Try uploading a smaller project or fewer files. Large projects may need to be analyzed in parts.');
+    }
+    if (error?.message?.includes('429')) {
+      throw new Error('OpenAI rate limit reached. Please wait a moment and try again.');
     }
     // Re-throw the error so the calling code can handle it appropriately
     throw error;

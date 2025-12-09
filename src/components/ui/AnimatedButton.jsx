@@ -41,12 +41,18 @@ export default function AnimatedButton({
     };
 
     const variants = {
-        primary: "bg-gradient-to-r from-purple-600 via-violet-600 to-amber-500 hover:from-purple-500 hover:via-violet-500 hover:to-amber-400 text-white shadow-lg shadow-purple-500/30",
+        primary: "text-slate-900 shadow-lg shadow-white/20",
         secondary: "bg-gray-800 hover:bg-gray-700 text-white border border-gray-700",
         ghost: "bg-transparent hover:bg-gray-800/50 text-gray-300 hover:text-white",
         danger: "bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white shadow-lg shadow-red-500/25",
         success: "bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white shadow-lg shadow-green-500/25",
     };
+
+    // Silver chrome gradient for primary variant
+    const primaryStyle = variant === 'primary' ? {
+        background: 'linear-gradient(135deg, #e2e8f0 0%, #ffffff 25%, #cbd5e1 50%, #ffffff 75%, #e2e8f0 100%)',
+        boxShadow: '0 4px 20px rgba(255,255,255,0.3), inset 0 1px 0 rgba(255,255,255,0.8), inset 0 -1px 0 rgba(0,0,0,0.1)'
+    } : {};
 
     const sizes = {
         sm: "h-9 px-4 text-sm",
@@ -68,7 +74,7 @@ export default function AnimatedButton({
                 sizes[size],
                 className
             )}
-            style={{ x, y }}
+            style={{ x, y, ...primaryStyle }}
             onMouseMove={handleMouseMove}
             onMouseLeave={handleMouseLeave}
             onClick={onClick}

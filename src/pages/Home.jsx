@@ -158,32 +158,32 @@ export default function Home() {
         { icon: CheckCircle, title: 'One-Click Apply', desc: 'Download patches or export modified code', color: 'gold' },
     ];
 
-    // Vibrant color classes matching ProjectHealth dashboard
+    // Bright Silver Chrome color classes
     const colorClasses = {
         purple: {
-            bg: 'from-[#461D7C]/16 to-[#6B3FA0]/6',
-            border: 'border-[#461D7C]/30 hover:border-[#6B3FA0]/50',
-            icon: 'text-[#6B3FA0]',
-            glow: 'group-hover:shadow-[#6B3FA0]/20'
+            bg: 'from-slate-200/20 to-white/10',
+            border: 'border-slate-300/40 hover:border-white/60',
+            icon: 'text-slate-200',
+            glow: 'group-hover:shadow-white/30'
         },
         gold: {
-            bg: 'from-[#461D7C]/18 to-[#FFE566]/6',
-            border: 'border-[#FFE566]/30 hover:border-[#FFE566]/50',
-            icon: 'text-[#FFE566]',
-            glow: 'group-hover:shadow-[#FFE566]/20'
+            bg: 'from-slate-200/20 to-white/10',
+            border: 'border-slate-300/40 hover:border-white/60',
+            icon: 'text-slate-200',
+            glow: 'group-hover:shadow-white/30'
         },
-        // fallback vibrant accents for small places
+        // fallback accents
         cyan: {
-            bg: 'from-cyan-500/12 to-cyan-500/4',
-            border: 'border-cyan-500/20 hover:border-cyan-400/40',
-            icon: 'text-cyan-400',
-            glow: 'group-hover:shadow-cyan-500/12'
+            bg: 'from-slate-200/20 to-white/10',
+            border: 'border-slate-300/40 hover:border-white/60',
+            icon: 'text-slate-200',
+            glow: 'group-hover:shadow-white/30'
         },
         orange: {
-            bg: 'from-orange-500/12 to-orange-500/4',
-            border: 'border-orange-500/20 hover:border-orange-400/40',
-            icon: 'text-orange-400',
-            glow: 'group-hover:shadow-orange-500/12'
+            bg: 'from-slate-200/20 to-white/10',
+            border: 'border-slate-300/40 hover:border-white/60',
+            icon: 'text-slate-200',
+            glow: 'group-hover:shadow-white/30'
         }
     };
 
@@ -340,20 +340,31 @@ export default function Home() {
                                     whileHover={{ y: -8, scale: 1.03 }}
                                     className="group"
                                 >
-                                    <div className={`relative h-full p-6 rounded-2xl bg-gradient-to-br ${colors.bg} backdrop-blur-xl border ${colors.border} transition-all duration-300 overflow-hidden group-hover:shadow-lg ${colors.glow}`}>
+                                    <div className="relative h-full p-6 rounded-2xl bg-gradient-to-br from-slate-100/10 via-white/5 to-slate-300/10 backdrop-blur-xl border border-slate-300/30 hover:border-white/50 transition-all duration-300 overflow-hidden group-hover:shadow-lg group-hover:shadow-white/20"
+                                        style={{
+                                            background: 'linear-gradient(135deg, rgba(203,213,225,0.15) 0%, rgba(255,255,255,0.08) 50%, rgba(148,163,184,0.12) 100%)',
+                                            boxShadow: '0 4px 30px rgba(255,255,255,0.1), inset 0 1px 0 rgba(255,255,255,0.2)'
+                                        }}
+                                    >
+                                        {/* Chrome shine effect */}
+                                        <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-transparent opacity-60 group-hover:opacity-100 transition-opacity" />
                                         {/* Animated corner accent */}
-                                        <div className={`absolute top-0 right-0 w-20 h-20 bg-gradient-to-br ${colors.bg} rounded-bl-full opacity-50 group-hover:opacity-100 transition-opacity`} />
+                                        <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-white/30 to-transparent rounded-bl-full opacity-50 group-hover:opacity-100 transition-opacity" />
 
                                         <div className="relative z-10">
                                             <motion.div
-                                                className={`w-12 h-12 rounded-xl bg-gradient-to-br ${colors.bg} flex items-center justify-center mb-4 mx-auto border ${colors.border} transition-all duration-300`}
+                                                className="w-12 h-12 rounded-xl flex items-center justify-center mb-4 mx-auto border border-slate-300/40 hover:border-white/60 transition-all duration-300"
+                                                style={{
+                                                    background: 'linear-gradient(145deg, rgba(226,232,240,0.2) 0%, rgba(255,255,255,0.1) 50%, rgba(203,213,225,0.15) 100%)',
+                                                    boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.3), 0 2px 8px rgba(0,0,0,0.2)'
+                                                }}
                                                 initial={{ scale: 0 }}
                                                 animate={{ scale: 1 }}
                                                 transition={{ delay: 0.7 + idx * 0.1, type: "spring", bounce: 0.6 }}
                                             >
-                                                <feature.icon className={`w-6 h-6 ${colors.icon}`} />
+                                                <feature.icon className="w-6 h-6 text-slate-100" />
                                             </motion.div>
-                                            <h3 className={`font-semibold ${colors.icon} mb-2 transition-colors`}>{feature.title}</h3>
+                                            <h3 className="font-semibold text-slate-100 mb-2 transition-colors">{feature.title}</h3>
                                             <p className="text-sm text-slate-400 leading-relaxed">{feature.desc}</p>
                                         </div>
                                     </div>
@@ -363,7 +374,7 @@ export default function Home() {
                     </motion.div>
                 </div>
 
-                {/* Upload Section - Vibrant Multi-color */}
+                {/* Upload Section - Bright Silver Chrome */}
                 <div className="max-w-2xl mx-auto px-6">
                     <motion.div
                         initial={{ opacity: 0, y: 40, scale: 0.95 }}
@@ -372,11 +383,14 @@ export default function Home() {
                         className="max-w-2xl mx-auto"
                     >
                         <div className="relative">
-                            {/* Glow effect behind card - Vibrant gradient */}
+                            {/* Glow effect behind card - Silver Chrome */}
                             <motion.div 
-                                className="absolute -inset-2 rounded-[2rem] blur-2xl metallic-purple-bg opacity-40"
+                                className="absolute -inset-2 rounded-[2rem] blur-2xl opacity-40"
+                                style={{
+                                    background: 'linear-gradient(135deg, rgba(226,232,240,0.6) 0%, rgba(255,255,255,0.4) 50%, rgba(148,163,184,0.5) 100%)'
+                                }}
                                 animate={{
-                                    opacity: [0.25, 0.5, 0.25],
+                                    opacity: [0.3, 0.6, 0.3],
                                 }}
                                 transition={{
                                     duration: 5,
@@ -385,7 +399,13 @@ export default function Home() {
                                 }}
                             />
 
-                            <div className="relative bg-slate-900/80 backdrop-blur-2xl rounded-3xl border metallic-purple-border p-8 shadow-2xl">
+                            <div 
+                                className="relative backdrop-blur-2xl rounded-3xl border border-slate-300/40 p-8 shadow-2xl"
+                                style={{
+                                    background: 'linear-gradient(145deg, rgba(226,232,240,0.12) 0%, rgba(255,255,255,0.06) 50%, rgba(148,163,184,0.1) 100%)',
+                                    boxShadow: '0 8px 40px rgba(255,255,255,0.1), inset 0 1px 0 rgba(255,255,255,0.25), inset 0 -1px 0 rgba(0,0,0,0.1)'
+                                }}
+                            >
                                 <motion.div
                                     className="flex items-center gap-2 justify-center mb-6"
                                     initial={{ opacity: 0 }}
@@ -403,9 +423,9 @@ export default function Home() {
                                             repeatDelay: 3
                                         }}
                                     >
-                                        <Sparkles className="w-5 h-5 text-[#FFE566]" />
+                                        <Sparkles className="w-5 h-5 text-slate-200" />
                                     </motion.div>
-                                    <span className="text-[#FFE566] font-medium glow-gold-subtle">Start Your Analysis</span>
+                                    <span className="text-slate-100 font-medium" style={{ textShadow: '0 0 20px rgba(255,255,255,0.5)' }}>Start Your Analysis</span>
                                 </motion.div>
 
                                 {/* Error Message */}

@@ -148,15 +148,20 @@ export default function FileUploader({ onUpload, isUploading }) {
 
     return (
         <div className="w-full max-w-2xl mx-auto">
-            {/* Mode Toggle - Vibrant Multi-color Theme */}
-            <div className="flex gap-2 mb-6 p-1.5 bg-slate-900/60 rounded-2xl backdrop-blur-sm border border-slate-700/30">
+            {/* Mode Toggle - Silver Chrome Theme */}
+            <div 
+                className="flex gap-2 mb-6 p-1.5 rounded-2xl backdrop-blur-sm border border-slate-300/30"
+                style={{
+                    background: 'linear-gradient(145deg, rgba(226,232,240,0.08) 0%, rgba(255,255,255,0.04) 50%, rgba(148,163,184,0.06) 100%)'
+                }}
+            >
                 {['zip', 'github'].map((mode) => (
                     <motion.button
                         key={mode}
                         onClick={() => { setUploadMode(mode); clearSelection(); }}
                         className={cn(
                             "relative flex-1 flex items-center justify-center gap-2 py-3.5 px-4 rounded-xl text-sm font-medium transition-colors",
-                            uploadMode === mode ? "text-white" : "text-slate-400 hover:text-white"
+                            uploadMode === mode ? "text-slate-900" : "text-slate-400 hover:text-white"
                         )}
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
@@ -164,7 +169,11 @@ export default function FileUploader({ onUpload, isUploading }) {
                         {uploadMode === mode && (
                             <motion.div
                                 layoutId="activeTab"
-                                className="absolute inset-0 bg-gradient-to-r from-cyan-500 via-purple-500 to-green-500 rounded-xl"
+                                className="absolute inset-0 rounded-xl"
+                                style={{
+                                    background: 'linear-gradient(135deg, #e2e8f0 0%, #ffffff 50%, #cbd5e1 100%)',
+                                    boxShadow: '0 2px 10px rgba(255,255,255,0.3), inset 0 1px 0 rgba(255,255,255,0.8)'
+                                }}
                                 initial={false}
                                 transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
                             />
@@ -210,7 +219,7 @@ export default function FileUploader({ onUpload, isUploading }) {
                         exit={{ opacity: 0, y: -20, scale: 0.95 }}
                         transition={{ duration: 0.3, ease: [0.25, 0.46, 0.45, 0.94] }}
                     >
-                        {/* Drop Zone - Vibrant Multi-color Theme */}
+                        {/* Drop Zone - Silver Chrome Theme */}
                         <motion.div
                             ref={dropZoneRef}
                             onDragEnter={handleDrag}
@@ -222,19 +231,26 @@ export default function FileUploader({ onUpload, isUploading }) {
                             className={cn(
                                 "relative border-2 border-dashed rounded-2xl p-12 text-center cursor-pointer transition-all duration-300 overflow-hidden",
                                 dragActive
-                                    ? "border-cyan-400 bg-cyan-500/10"
+                                    ? "border-white/70 bg-white/10"
                                     : selectedFile
-                                        ? "border-green-400/50 bg-green-500/5"
-                                        : "border-slate-700/50 hover:border-cyan-500/50 bg-slate-900/50",
+                                        ? "border-slate-200/60 bg-slate-200/5"
+                                        : "border-slate-400/40 hover:border-white/60 bg-slate-800/30",
                                 isUploading && "pointer-events-none"
                             )}
+                            style={{
+                                background: dragActive 
+                                    ? 'linear-gradient(145deg, rgba(255,255,255,0.12) 0%, rgba(226,232,240,0.08) 100%)'
+                                    : selectedFile
+                                        ? 'linear-gradient(145deg, rgba(226,232,240,0.08) 0%, rgba(255,255,255,0.04) 100%)'
+                                        : 'linear-gradient(145deg, rgba(148,163,184,0.06) 0%, rgba(226,232,240,0.03) 100%)'
+                            }}
                             whileHover={{ scale: selectedFile ? 1 : 1.01 }}
                             animate={{
                                 boxShadow: dragActive
-                                    ? '0 0 30px rgba(6, 182, 212, 0.3)'
+                                    ? '0 0 30px rgba(255, 255, 255, 0.4)'
                                     : selectedFile
-                                        ? '0 0 30px rgba(34, 197, 94, 0.2)'
-                                        : ['0 0 0px rgba(0, 0, 0, 0)', '0 0 20px rgba(168, 85, 247, 0.3)', '0 0 0px rgba(0, 0, 0, 0)']
+                                        ? '0 0 30px rgba(226, 232, 240, 0.3)'
+                                        : ['0 0 0px rgba(0, 0, 0, 0)', '0 0 25px rgba(255, 255, 255, 0.2)', '0 0 0px rgba(0, 0, 0, 0)']
                             }}
                             transition={{
                                 boxShadow: {
@@ -244,12 +260,12 @@ export default function FileUploader({ onUpload, isUploading }) {
                                 }
                             }}
                         >
-                            {/* Dynamic glow effect - Vibrant */}
+                            {/* Dynamic glow effect - Silver Chrome */}
                             {!selectedFile && (
                                 <motion.div
                                     className="absolute inset-0 pointer-events-none"
                                     style={{
-                                        background: `radial-gradient(circle at ${glowX.get()}% ${glowY.get()}%, rgba(6, 182, 212, 0.25), transparent 50%)`,
+                                        background: `radial-gradient(circle at ${glowX.get()}% ${glowY.get()}%, rgba(255, 255, 255, 0.2), transparent 50%)`,
                                     }}
                                 />
                             )}
@@ -287,14 +303,18 @@ export default function FileUploader({ onUpload, isUploading }) {
                                         className="space-y-5"
                                     >
                                         <motion.div
-                                            className="relative w-24 h-24 mx-auto bg-gradient-to-br from-green-500/20 to-cyan-500/20 rounded-2xl flex items-center justify-center border border-green-500/30"
+                                            className="relative w-24 h-24 mx-auto rounded-2xl flex items-center justify-center border border-slate-200/50"
+                                            style={{
+                                                background: 'linear-gradient(145deg, rgba(226,232,240,0.2) 0%, rgba(255,255,255,0.1) 50%, rgba(148,163,184,0.15) 100%)',
+                                                boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.4), 0 4px 20px rgba(255,255,255,0.15)'
+                                            }}
                                             initial={{ rotate: -10 }}
                                             animate={{ 
                                                 rotate: 0,
                                                 boxShadow: [
-                                                    '0 0 20px rgba(34, 197, 94, 0.3)',
-                                                    '0 0 30px rgba(34, 197, 94, 0.4)',
-                                                    '0 0 20px rgba(34, 197, 94, 0.3)'
+                                                    '0 0 20px rgba(255, 255, 255, 0.2)',
+                                                    '0 0 35px rgba(255, 255, 255, 0.35)',
+                                                    '0 0 20px rgba(255, 255, 255, 0.2)'
                                                 ]
                                             }}
                                             transition={{ 
@@ -307,7 +327,7 @@ export default function FileUploader({ onUpload, isUploading }) {
                                                 animate={{ scale: 1 }}
                                                 transition={{ delay: 0.2, type: "spring", bounce: 0.6 }}
                                             >
-                                                <CheckCircle className="w-12 h-12 text-green-400" />
+                                                <CheckCircle className="w-12 h-12 text-slate-100" />
                                             </motion.div>
                                         </motion.div>
                                         <div className="space-y-2">
@@ -325,7 +345,7 @@ export default function FileUploader({ onUpload, isUploading }) {
                                                 animate={{ opacity: 1 }}
                                                 transition={{ delay: 0.2 }}
                                             >
-                                                <span className="text-green-400 font-medium">
+                                                <span className="text-slate-200 font-medium">
                                                     {formatFileSize(selectedFile.size)}
                                                 </span>
                                                 <span className="text-slate-600">•</span>
@@ -336,7 +356,7 @@ export default function FileUploader({ onUpload, isUploading }) {
                                         </div>
                                         <motion.button
                                             onClick={(e) => { e.stopPropagation(); clearSelection(); }}
-                                            className="text-slate-400 hover:text-white text-sm flex items-center gap-2 mx-auto px-4 py-2 rounded-lg hover:bg-red-500/20 border border-slate-700/50 hover:border-red-500/30 transition-colors"
+                                            className="text-slate-400 hover:text-white text-sm flex items-center gap-2 mx-auto px-4 py-2 rounded-lg hover:bg-slate-500/20 border border-slate-500/30 hover:border-slate-400/50 transition-colors"
                                             whileHover={{ scale: 1.05 }}
                                             whileTap={{ scale: 0.95 }}
                                         >
@@ -352,7 +372,11 @@ export default function FileUploader({ onUpload, isUploading }) {
                                         className="space-y-4"
                                     >
                                         <motion.div
-                                            className="w-20 h-20 mx-auto bg-gradient-to-br from-cyan-500/20 to-purple-500/20 rounded-2xl flex items-center justify-center border border-cyan-500/30"
+                                            className="w-20 h-20 mx-auto rounded-2xl flex items-center justify-center border border-slate-300/40"
+                                            style={{
+                                                background: 'linear-gradient(145deg, rgba(226,232,240,0.15) 0%, rgba(255,255,255,0.08) 50%, rgba(148,163,184,0.12) 100%)',
+                                                boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.3), 0 4px 15px rgba(0,0,0,0.2)'
+                                            }}
                                             animate={{
                                                 y: dragActive ? -5 : 0,
                                                 scale: dragActive ? 1.1 : 1,
@@ -361,7 +385,7 @@ export default function FileUploader({ onUpload, isUploading }) {
                                         >
                                             <Upload className={cn(
                                                 "w-10 h-10 transition-colors",
-                                                dragActive ? "text-cyan-400" : "text-purple-400"
+                                                dragActive ? "text-white" : "text-slate-300"
                                             )} />
                                         </motion.div>
                                         <div>
@@ -372,33 +396,32 @@ export default function FileUploader({ onUpload, isUploading }) {
                                                 or click to browse
                                             </p>
                                             <motion.div
-                                                className="mt-3 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-cyan-500/10 border border-cyan-500/20"
+                                                className="mt-3 inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-slate-400/30"
+                                                style={{
+                                                    background: 'linear-gradient(145deg, rgba(226,232,240,0.1) 0%, rgba(255,255,255,0.05) 100%)'
+                                                }}
                                                 initial={{ opacity: 0, scale: 0.9 }}
                                                 animate={{ opacity: 1, scale: 1 }}
                                                 transition={{ delay: 0.3 }}
                                             >
-                                                <span className="text-cyan-400 text-xs font-medium">
+                                                <span className="text-slate-300 text-xs font-medium">
                                                     Max {MAX_SIZE_MB}MB
                                                 </span>
                                             </motion.div>
                                         </div>
 
-                                        {/* Supported stacks - Vibrant */}
+                                        {/* Supported stacks - Silver Chrome */}
                                         <div className="pt-4">
                                             <p className="text-slate-500 text-xs mb-3">Supports:</p>
                                             <div className="flex items-center justify-center gap-2 flex-wrap">
                                                 {['React', 'Next.js', 'Vue', 'Python', 'Node.js', 'FastAPI', 'Django', 'Flask'].map((tech, i) => {
-                                                    const techColors = ['cyan', 'purple', 'green', 'orange', 'cyan', 'purple', 'green', 'orange'];
-                                                    const colorClass = {
-                                                        cyan: 'from-cyan-500/10 to-cyan-500/5 text-cyan-400 border-cyan-500/20 hover:border-cyan-400/40',
-                                                        purple: 'from-purple-500/10 to-purple-500/5 text-purple-400 border-purple-500/20 hover:border-purple-400/40',
-                                                        green: 'from-green-500/10 to-green-500/5 text-green-400 border-green-500/20 hover:border-green-400/40',
-                                                        orange: 'from-orange-500/10 to-orange-500/5 text-orange-400 border-orange-500/20 hover:border-orange-400/40'
-                                                    }[techColors[i]];
                                                     return (
                                                         <motion.span
                                                             key={tech}
-                                                            className={`px-3 py-1 text-xs rounded-full bg-gradient-to-r ${colorClass} border transition-colors`}
+                                                            className="px-3 py-1 text-xs rounded-full text-slate-300 border border-slate-400/30 hover:border-white/50 transition-colors"
+                                                            style={{
+                                                                background: 'linear-gradient(145deg, rgba(226,232,240,0.08) 0%, rgba(255,255,255,0.04) 100%)'
+                                                            }}
                                                             initial={{ opacity: 0, scale: 0 }}
                                                             animate={{ opacity: 1, scale: 1 }}
                                                             transition={{ delay: 0.3 + i * 0.06 }}
@@ -435,19 +458,22 @@ export default function FileUploader({ onUpload, isUploading }) {
                             >
                                 <OrbitalSpinner size="lg" className="mx-auto" />
                                 <div>
-                                    <p className="text-cyan-400 font-medium mb-2">Cloning Repository...</p>
+                                    <p className="text-slate-200 font-medium mb-2">Cloning Repository...</p>
                                     <AnimatedProgress progress={uploadProgress} className="w-48 mx-auto" />
-                                    <p className="text-cyan-400/60 text-sm mt-2">Analyzing code structure</p>
+                                    <p className="text-slate-400 text-sm mt-2">Analyzing code structure</p>
                                 </div>
                             </motion.div>
                         ) : (
                             <>
                                 <div className="relative group">
                                     <motion.div
-                                        className="absolute -inset-0.5 bg-gradient-to-r from-cyan-500 via-purple-500 to-green-500 rounded-xl opacity-0 group-focus-within:opacity-100 blur transition-opacity"
+                                        className="absolute -inset-0.5 rounded-xl opacity-0 group-focus-within:opacity-100 blur transition-opacity"
+                                        style={{
+                                            background: 'linear-gradient(135deg, rgba(226,232,240,0.5) 0%, rgba(255,255,255,0.3) 50%, rgba(148,163,184,0.4) 100%)'
+                                        }}
                                     />
                                     <div className="relative">
-                                        <Github className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-purple-400 z-10" />
+                                        <Github className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-300 z-10" />
                                         <input
                                             value={githubUrl}
                                             onChange={(e) => {
@@ -455,7 +481,10 @@ export default function FileUploader({ onUpload, isUploading }) {
                                                 setError(null);
                                             }}
                                             placeholder="https://github.com/username/repository"
-                                            className="w-full pl-12 pr-4 h-14 bg-slate-900/80 border border-slate-700 text-white placeholder:text-slate-500 rounded-xl focus:outline-none focus:border-purple-500/50 transition-colors"
+                                            className="w-full pl-12 pr-4 h-14 bg-slate-800/60 border border-slate-400/30 text-white placeholder:text-slate-500 rounded-xl focus:outline-none focus:border-white/50 transition-colors"
+                                            style={{
+                                                background: 'linear-gradient(145deg, rgba(148,163,184,0.08) 0%, rgba(226,232,240,0.04) 100%)'
+                                            }}
                                             disabled={isUploading}
                                         />
                                     </div>
@@ -470,13 +499,13 @@ export default function FileUploader({ onUpload, isUploading }) {
                                     >
                                         {isValidGitHubUrl(githubUrl) ? (
                                             <>
-                                                <CheckCircle className="w-4 h-4 text-green-400" />
-                                                <span className="text-green-400 text-sm">Valid GitHub URL</span>
+                                                <CheckCircle className="w-4 h-4 text-slate-200" />
+                                                <span className="text-slate-200 text-sm">Valid GitHub URL</span>
                                             </>
                                         ) : (
                                             <>
-                                                <AlertCircle className="w-4 h-4 text-orange-400" />
-                                                <span className="text-orange-400 text-sm">Enter a valid GitHub repo URL</span>
+                                                <AlertCircle className="w-4 h-4 text-slate-400" />
+                                                <span className="text-slate-400 text-sm">Enter a valid GitHub repo URL</span>
                                             </>
                                         )}
                                     </motion.div>
@@ -487,17 +516,22 @@ export default function FileUploader({ onUpload, isUploading }) {
                                 </p>
                                 
                                 {/* Supported formats hint */}
-                                <div className="bg-slate-900/50 rounded-xl p-4 border border-purple-500/20">
-                                    <p className="text-purple-400/70 text-xs mb-3 flex items-center gap-2">
-                                        <Sparkles className="w-3 h-3 text-purple-400" />
+                                <div 
+                                    className="rounded-xl p-4 border border-slate-400/20"
+                                    style={{
+                                        background: 'linear-gradient(145deg, rgba(226,232,240,0.06) 0%, rgba(255,255,255,0.03) 100%)'
+                                    }}
+                                >
+                                    <p className="text-slate-400 text-xs mb-3 flex items-center gap-2">
+                                        <Sparkles className="w-3 h-3 text-slate-300" />
                                         Supported formats:
                                     </p>
                                     <div className="space-y-1 font-mono text-xs text-slate-500">
                                         <p className="flex items-center gap-2">
-                                            <span className="text-green-400">✓</span> https://github.com/user/repo
+                                            <span className="text-slate-300">✓</span> https://github.com/user/repo
                                         </p>
                                         <p className="flex items-center gap-2">
-                                            <span className="text-green-400">✓</span> https://github.com/user/repo.git
+                                            <span className="text-slate-300">✓</span> https://github.com/user/repo.git
                                         </p>
                                     </div>
                                 </div>
