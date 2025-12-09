@@ -35,17 +35,15 @@ export default async function handler(req) {
 
   try {
     const body = await req.json();
-    
-    // Force streaming to avoid timeout - stream keeps connection alive
+
+    // Respect client-provided parameters; only add streaming to keep the connection alive
+    // Do NOT override the model – client uses gpt-4o for structured JSON
     const optimizedBody = {
       ...body,
-      // Use gpt-3.5-turbo for much faster responses
-      model: 'gpt-3.5-turbo-16k',
-      // Enable streaming to keep connection alive and avoid timeout
       stream: true,
-      // Limit tokens for faster response
-      max_tokens: body.max_tokens || 3000,
-      temperature: body.temperature ?? 0.5,
+      // Preserve max_tokens/temperature if provided; otherwise set safe defaults
+      max_tokens: body.max_tokens ?? 4000,
+      temperature: body.temperature ?? 0.3,
     };
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -76,6 +74,7 @@ export default async function handler(req) {
     const decoder = new TextDecoder();
     let fullContent = '';
     let usage = null;
+    let role = 'assistant';
 
     while (true) {
       const { done, value } = await reader.read();
@@ -91,8 +90,12 @@ export default async function handler(req) {
           
           try {
             const parsed = JSON.parse(data);
-            const content = parsed.choices?.[0]?.delta?.content || '';
-            fullContent += content;
+            // Capture role if present in early deltas
+            if (parsed.choices?.[0]?.delta?.role) {
+              role = parsed.choices[0].delta.role;
+            }
+            const contentDelta = parsed.choices?.[0]?.delta?.content || '';
+            fullContent += contentDelta;
             
             // Capture usage if present (usually in last chunk)
             if (parsed.usage) {
@@ -105,16 +108,21 @@ export default async function handler(req) {
       }
     }
 
-    // Return the complete response in OpenAI format
+    // Return the complete response in OpenAI format – matching client expectations
     const result = {
+      id: `bl-${Date.now()}`,
+      object: 'chat.completion',
+      created: Math.floor(Date.now() / 1000),
+      model: optimizedBody.model || 'gpt-4o',
       choices: [{
+        index: 0,
         message: {
-          role: 'assistant',
-          content: fullContent
+          role,
+          content: fullContent,
         },
-        finish_reason: 'stop'
+        finish_reason: 'stop',
       }],
-      usage: usage || { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 }
+      usage: usage || { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 },
     };
 
     return new Response(JSON.stringify(result), {
