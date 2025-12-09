@@ -423,9 +423,16 @@ export default function Home() {
                                             repeatDelay: 3
                                         }}
                                     >
-                                        <Sparkles className="w-5 h-5 text-slate-200" />
+                                        <Sparkles className="w-5 h-5 text-purple-400" style={{ filter: 'drop-shadow(0 0 8px rgba(168, 85, 247, 0.8))' }} />
                                     </motion.div>
-                                    <span className="text-slate-100 font-medium" style={{ textShadow: '0 0 20px rgba(255,255,255,0.5)' }}>Start Your Analysis</span>
+                                    <span 
+                                        className="text-purple-300 font-medium"
+                                        style={{ 
+                                            textShadow: '0 0 10px rgba(168, 85, 247, 0.8), 0 0 20px rgba(168, 85, 247, 0.6), 0 0 30px rgba(168, 85, 247, 0.4)'
+                                        }}
+                                    >
+                                        Start Your Analysis
+                                    </span>
                                 </motion.div>
 
                                 {/* Error Message */}

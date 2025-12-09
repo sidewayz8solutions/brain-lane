@@ -1,8 +1,6 @@
-// Vercel Edge Function to proxy OpenAI requests (avoids CORS issues)
+// Vercel Edge Function to proxy OpenAI requests with streaming support
 export const config = {
   runtime: 'edge',
-  // Increase max duration for AI analysis (Vercel Pro: up to 300s, Hobby: 10s)
-  maxDuration: 60,
 };
 
 export default async function handler(req) {
@@ -38,19 +36,16 @@ export default async function handler(req) {
   try {
     const body = await req.json();
     
-    // Use AbortController for timeout
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 55000); // 55s timeout (leave buffer for response)
-    
-    // Optimize request for faster responses
+    // Force streaming to avoid timeout - stream keeps connection alive
     const optimizedBody = {
       ...body,
-      // Use faster model if not specified or if using gpt-4
-      model: body.model === 'gpt-4' ? 'gpt-4-turbo-preview' : (body.model || 'gpt-3.5-turbo'),
-      // Limit tokens if not specified
-      max_tokens: body.max_tokens || 2000,
-      // Lower temperature for faster, more deterministic responses
-      temperature: body.temperature ?? 0.7,
+      // Use gpt-3.5-turbo for much faster responses
+      model: 'gpt-3.5-turbo-16k',
+      // Enable streaming to keep connection alive and avoid timeout
+      stream: true,
+      // Limit tokens for faster response
+      max_tokens: body.max_tokens || 3000,
+      temperature: body.temperature ?? 0.5,
     };
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -60,18 +55,13 @@ export default async function handler(req) {
         'Authorization': `Bearer ${apiKey}`,
       },
       body: JSON.stringify(optimizedBody),
-      signal: controller.signal,
     });
 
-    clearTimeout(timeoutId);
-
-    const data = await response.json();
-    
-    // Handle OpenAI API errors
     if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
       return new Response(JSON.stringify({ 
-        error: data.error?.message || `OpenAI API error: ${response.status}`,
-        code: data.error?.code || response.status
+        error: errorData.error?.message || `OpenAI API error: ${response.status}`,
+        code: errorData.error?.code || response.status
       }), {
         status: response.status,
         headers: {
@@ -80,30 +70,65 @@ export default async function handler(req) {
         },
       });
     }
-    
-    return new Response(JSON.stringify(data), {
-      status: response.status,
+
+    // Collect streamed response and return as complete JSON
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let fullContent = '';
+    let usage = null;
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      
+      const chunk = decoder.decode(value);
+      const lines = chunk.split('\n').filter(line => line.trim() !== '');
+      
+      for (const line of lines) {
+        if (line.startsWith('data: ')) {
+          const data = line.slice(6);
+          if (data === '[DONE]') continue;
+          
+          try {
+            const parsed = JSON.parse(data);
+            const content = parsed.choices?.[0]?.delta?.content || '';
+            fullContent += content;
+            
+            // Capture usage if present (usually in last chunk)
+            if (parsed.usage) {
+              usage = parsed.usage;
+            }
+          } catch (e) {
+            // Skip malformed JSON chunks
+          }
+        }
+      }
+    }
+
+    // Return the complete response in OpenAI format
+    const result = {
+      choices: [{
+        message: {
+          role: 'assistant',
+          content: fullContent
+        },
+        finish_reason: 'stop'
+      }],
+      usage: usage || { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 }
+    };
+
+    return new Response(JSON.stringify(result), {
+      status: 200,
       headers: {
         'Content-Type': 'application/json',
         'Access-Control-Allow-Origin': '*',
       },
     });
   } catch (error) {
-    // Handle timeout
-    if (error.name === 'AbortError') {
-      return new Response(JSON.stringify({ 
-        error: 'Request timed out. Try analyzing a smaller project or fewer files.',
-        code: 'TIMEOUT'
-      }), {
-        status: 504,
-        headers: { 
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*',
-        },
-      });
-    }
-    
-    return new Response(JSON.stringify({ error: error.message }), {
+    return new Response(JSON.stringify({ 
+      error: error.message || 'Unknown error',
+      code: 'STREAM_ERROR'
+    }), {
       status: 500,
       headers: { 
         'Content-Type': 'application/json',

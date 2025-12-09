@@ -383,44 +383,57 @@ export default function FileUploader({ onUpload, isUploading }) {
                                             }}
                                             transition={{ type: "spring", bounce: 0.5 }}
                                         >
-                                            <Upload className={cn(
-                                                "w-10 h-10 transition-colors",
-                                                dragActive ? "text-white" : "text-slate-300"
-                                            )} />
+                                            <Upload 
+                                                className={cn(
+                                                    "w-10 h-10 transition-colors",
+                                                    dragActive ? "text-purple-300" : "text-purple-400"
+                                                )}
+                                                style={{ filter: 'drop-shadow(0 0 8px rgba(168, 85, 247, 0.7))' }}
+                                            />
                                         </motion.div>
                                         <div>
-                                            <p className="text-white font-medium text-lg">
+                                            <p 
+                                                className="text-purple-300 font-medium text-lg"
+                                                style={{ textShadow: '0 0 10px rgba(168, 85, 247, 0.8), 0 0 20px rgba(168, 85, 247, 0.5)' }}
+                                            >
                                                 {dragActive ? 'Drop it here!' : 'Drop your project ZIP here'}
                                             </p>
-                                            <p className="text-slate-400 text-sm mt-2">
+                                            <p 
+                                                className="text-purple-400/80 text-sm mt-2"
+                                                style={{ textShadow: '0 0 8px rgba(168, 85, 247, 0.5)' }}
+                                            >
                                                 or click to browse
                                             </p>
                                             <motion.div
-                                                className="mt-3 inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-slate-400/30"
+                                                className="mt-3 inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-purple-500/30"
                                                 style={{
-                                                    background: 'linear-gradient(145deg, rgba(226,232,240,0.1) 0%, rgba(255,255,255,0.05) 100%)'
+                                                    background: 'linear-gradient(145deg, rgba(168, 85, 247, 0.15) 0%, rgba(168, 85, 247, 0.05) 100%)'
                                                 }}
                                                 initial={{ opacity: 0, scale: 0.9 }}
                                                 animate={{ opacity: 1, scale: 1 }}
                                                 transition={{ delay: 0.3 }}
                                             >
-                                                <span className="text-slate-300 text-xs font-medium">
+                                                <span 
+                                                    className="text-purple-300 text-xs font-medium"
+                                                    style={{ textShadow: '0 0 6px rgba(168, 85, 247, 0.6)' }}
+                                                >
                                                     Max {MAX_SIZE_MB}MB
                                                 </span>
                                             </motion.div>
                                         </div>
 
-                                        {/* Supported stacks - Silver Chrome */}
+                                        {/* Supported stacks - Purple Glow */}
                                         <div className="pt-4">
-                                            <p className="text-slate-500 text-xs mb-3">Supports:</p>
+                                            <p className="text-purple-400/60 text-xs mb-3" style={{ textShadow: '0 0 6px rgba(168, 85, 247, 0.4)' }}>Supports:</p>
                                             <div className="flex items-center justify-center gap-2 flex-wrap">
                                                 {['React', 'Next.js', 'Vue', 'Python', 'Node.js', 'FastAPI', 'Django', 'Flask'].map((tech, i) => {
                                                     return (
                                                         <motion.span
                                                             key={tech}
-                                                            className="px-3 py-1 text-xs rounded-full text-slate-300 border border-slate-400/30 hover:border-white/50 transition-colors"
+                                                            className="px-3 py-1 text-xs rounded-full text-purple-300 border border-purple-500/30 hover:border-purple-400/60 transition-colors"
                                                             style={{
-                                                                background: 'linear-gradient(145deg, rgba(226,232,240,0.08) 0%, rgba(255,255,255,0.04) 100%)'
+                                                                background: 'linear-gradient(145deg, rgba(168, 85, 247, 0.12) 0%, rgba(168, 85, 247, 0.05) 100%)',
+                                                                textShadow: '0 0 6px rgba(168, 85, 247, 0.5)'
                                                             }}
                                                             initial={{ opacity: 0, scale: 0 }}
                                                             animate={{ opacity: 1, scale: 1 }}
@@ -433,7 +446,10 @@ export default function FileUploader({ onUpload, isUploading }) {
                                                 })}
                                             </div>
                                         </div>
-                                        <p className="text-slate-500 text-xs mt-4">
+                                        <p 
+                                            className="text-purple-400/60 text-xs mt-4"
+                                            style={{ textShadow: '0 0 4px rgba(168, 85, 247, 0.3)' }}
+                                        >
                                             💡 Tip: Exclude node_modules & virtual environments
                                         </p>
                                     </motion.div>
