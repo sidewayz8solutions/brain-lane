@@ -8,6 +8,17 @@ export default defineConfig({
   server: {
     allowedHosts: true
   },
+  build: {
+    rollupOptions: {
+      // @webcontainer/api is loaded dynamically at runtime in supported browsers
+      external: ['@webcontainer/api'],
+      output: {
+        globals: {
+          '@webcontainer/api': 'WebContainer'
+        }
+      }
+    }
+  },
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
