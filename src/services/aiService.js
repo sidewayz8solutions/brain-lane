@@ -205,15 +205,45 @@ export const InvokeLLM = async ({ prompt, response_json_schema, add_context_from
     }
     
     if (response_json_schema) {
-      try {
-        const parsed = JSON.parse(content);
-        console.log('✅ JSON parsed successfully');
+      const tryParse = (text) => {
+        try {
+          return JSON.parse(text);
+        } catch {
+          return null;
+        }
+      };
+
+      const repairJson = (text) => {
+        if (!text) return null;
+        // Remove non-printable/control characters
+        let t = text.replace(/[\u0000-\u001F\u007F]/g, '');
+        // Normalize smart quotes
+        t = t.replace(/[\u2018\u2019]/g, "'").replace(/[\u201C\u201D]/g, '"');
+        // Trim any leading text before first '{' and trailing after last '}'
+        const firstBrace = t.indexOf('{');
+        const lastBrace = t.lastIndexOf('}');
+        if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+          t = t.slice(firstBrace, lastBrace + 1);
+        }
+        // Remove trailing commas before closing braces/brackets
+        t = t.replace(/,\s*([}\]])/g, '$1');
+        // Attempt to balance braces quickly (basic heuristic)
+        const openCount = (t.match(/\{/g) || []).length;
+        const closeCount = (t.match(/\}/g) || []).length;
+        if (closeCount < openCount) {
+          t += '}';
+        }
+        return tryParse(t);
+      };
+
+      const parsed = tryParse(content) || repairJson(content);
+      if (parsed) {
+        console.log('✅ JSON parsed successfully (with repair if needed)');
         return parsed;
-      } catch (parseError) {
-        console.error('❌ JSON Parse Error:', parseError.message);
-        console.log('📄 Raw content (first 1000 chars):', content?.substring(0, 1000));
-        throw new Error('Failed to parse AI response as JSON');
       }
+      console.error('❌ JSON Parse Error: unable to parse even after repair');
+      console.log('📄 Raw content (first 1000 chars):', content?.substring(0, 1000));
+      throw new Error('Failed to parse AI response as JSON');
     }
     
     return content;
