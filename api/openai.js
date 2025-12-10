@@ -108,6 +108,34 @@ export default async function handler(req) {
       }
     }
 
+    // If client requested a JSON object, attempt to repair/parse server-side and
+    // ensure the content is a valid JSON string to avoid client-side parse errors.
+    const tryParse = (text) => {
+      try { return JSON.parse(text); } catch { return null; }
+    };
+    const repairJson = (text) => {
+      if (!text) return null;
+      let t = text.replace(/[\u0000-\u001F\u007F]/g, '');
+      t = t.replace(/[\u2018\u2019]/g, "'").replace(/[\u201C\u201D]/g, '"');
+      const firstBrace = t.indexOf('{');
+      const lastBrace = t.lastIndexOf('}');
+      if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+        t = t.slice(firstBrace, lastBrace + 1);
+      }
+      t = t.replace(/,\s*([}\]])/g, '$1');
+      const openCount = (t.match(/\{/g) || []).length;
+      const closeCount = (t.match(/\}/g) || []).length;
+      if (closeCount < openCount) t += '}';
+      return tryParse(t);
+    };
+
+    if (optimizedBody.response_format && optimizedBody.response_format.type === 'json_object') {
+      const parsed = tryParse(fullContent) || repairJson(fullContent);
+      if (parsed) {
+        fullContent = JSON.stringify(parsed);
+      }
+    }
+
     // Return the complete response in OpenAI format – matching client expectations
     const result = {
       id: `bl-${Date.now()}`,
