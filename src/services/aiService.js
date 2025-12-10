@@ -163,19 +163,10 @@ export const InvokeLLM = async ({ prompt, response_json_schema, add_context_from
     };
     
     // Use proxy endpoint when deployed (avoids CORS), direct API when local
-    const isLocalhost = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
-    const apiUrl = isLocalhost 
-      ? 'https://api.openai.com/v1/chat/completions'
-      : '/api/openai';
+    // Always use proxy to ensure consistent streaming/repair and avoid CORS/timeouts
+    const apiUrl = '/api/openai';
     
-    const headers = {
-      'Content-Type': 'application/json',
-    };
-    
-    // Only include Authorization header for direct API calls (localhost)
-    if (isLocalhost) {
-      headers['Authorization'] = `Bearer ${AI_CONFIG.apiKey}`;
-    }
+    const headers = { 'Content-Type': 'application/json' };
     
     const response = await safeFetch(apiUrl, {
       method: 'POST',
@@ -192,7 +183,7 @@ export const InvokeLLM = async ({ prompt, response_json_schema, add_context_from
       throw new Error(`OpenAI API Error: ${errorMsg}`);
     }
     
-    const data = await response.json();
+  const data = await response.json();
     console.log('✅ OpenAI API Response received');
     console.log('📊 Usage:', data.usage);
     
@@ -236,14 +227,24 @@ export const InvokeLLM = async ({ prompt, response_json_schema, add_context_from
         return tryParse(t);
       };
 
+      // If server already repaired content (json string), parsing should succeed
       const parsed = tryParse(content) || repairJson(content);
       if (parsed) {
         console.log('✅ JSON parsed successfully (with repair if needed)');
         return parsed;
       }
-      console.error('❌ JSON Parse Error: unable to parse even after repair');
-      console.log('📄 Raw content (first 1000 chars):', content?.substring(0, 1000));
-      throw new Error('Failed to parse AI response as JSON');
+      // Final fallback: provide minimal structured object to avoid UI crash
+      console.warn('⚠️ Using fallback structured response due to parse failure');
+      return {
+        summary: 'Analysis encountered formatting issues. Partial results may be unavailable.',
+        detected_stack: { framework: '', language: '', package_manager: '', testing_framework: '', database: '', additional: [] },
+        architecture: { pattern: '', components: [], external_dependencies: [], data_flow: '' },
+        security_vulnerabilities: [],
+        code_smells: [],
+        issues: [],
+        test_suggestions: [],
+        tasks: []
+      };
     }
     
     return content;

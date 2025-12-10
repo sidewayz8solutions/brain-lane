@@ -489,7 +489,7 @@ export default function FileUploader({ onUpload, isUploading }) {
                                         }}
                                     />
                                     <div className="relative">
-                                        <Github className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-300 z-10" />
+                                        <Github className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white z-10" />
                                         <input
                                             value={githubUrl}
                                             onChange={(e) => {
@@ -497,9 +497,10 @@ export default function FileUploader({ onUpload, isUploading }) {
                                                 setError(null);
                                             }}
                                             placeholder="https://github.com/username/repository"
-                                            className="w-full pl-12 pr-4 h-14 bg-slate-800/60 border border-slate-400/30 text-white placeholder:text-slate-500 rounded-xl focus:outline-none focus:border-white/50 transition-colors"
+                                            className="w-full pl-12 pr-4 h-14 bg-slate-900/70 border border-white/40 text-white placeholder:text-slate-300 rounded-xl focus:outline-none focus:border-white transition-colors"
                                             style={{
-                                                background: 'linear-gradient(145deg, rgba(148,163,184,0.08) 0%, rgba(226,232,240,0.04) 100%)'
+                                                background: 'linear-gradient(145deg, rgba(0,0,0,0.35) 0%, rgba(20,20,30,0.35) 100%)',
+                                                boxShadow: '0 0 24px rgba(168, 85, 247, 0.25)'
                                             }}
                                             disabled={isUploading}
                                         />
@@ -527,27 +528,27 @@ export default function FileUploader({ onUpload, isUploading }) {
                                     </motion.div>
                                 )}
                                 
-                                <p className="text-slate-500 text-sm text-center">
+                                <p className="text-white/90 text-sm text-center" style={{textShadow: '0 0 10px rgba(168,85,247,0.5)'}}>
                                     Enter the full URL of your public GitHub repository
                                 </p>
                                 
                                 {/* Supported formats hint */}
                                 <div 
-                                    className="rounded-xl p-4 border border-slate-400/20"
+                                    className="rounded-xl p-4 border border-white/30"
                                     style={{
-                                        background: 'linear-gradient(145deg, rgba(226,232,240,0.06) 0%, rgba(255,255,255,0.03) 100%)'
+                                        background: 'linear-gradient(145deg, rgba(0,0,0,0.35) 0%, rgba(20,20,30,0.35) 100%)'
                                     }}
                                 >
-                                    <p className="text-slate-400 text-xs mb-3 flex items-center gap-2">
-                                        <Sparkles className="w-3 h-3 text-slate-300" />
+                                    <p className="text-white/90 text-xs mb-3 flex items-center gap-2">
+                                        <Sparkles className="w-3 h-3 text-white" />
                                         Supported formats:
                                     </p>
-                                    <div className="space-y-1 font-mono text-xs text-slate-500">
+                                    <div className="space-y-1 font-mono text-xs text-white/85">
                                         <p className="flex items-center gap-2">
-                                            <span className="text-slate-300">✓</span> https://github.com/user/repo
+                                            <span className="text-white">✓</span> https://github.com/user/repo
                                         </p>
                                         <p className="flex items-center gap-2">
-                                            <span className="text-slate-300">✓</span> https://github.com/user/repo.git
+                                            <span className="text-white">✓</span> https://github.com/user/repo.git
                                         </p>
                                     </div>
                                 </div>
@@ -569,7 +570,7 @@ export default function FileUploader({ onUpload, isUploading }) {
                     disabled={isUploading || (uploadMode === 'zip' ? !selectedFile : !githubUrl || !isValidGitHubUrl(githubUrl))}
                     loading={isUploading}
                     size="xl"
-                    className="w-full"
+                    className="w-full text-white"
                 >
                     {isUploading ? (
                         'Analyzing Project...'
