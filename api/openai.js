@@ -46,115 +46,110 @@ export default async function handler(req) {
       temperature: body.temperature ?? 0.3,
     };
 
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify(optimizedBody),
-    });
+    // Heartbeat streaming: send whitespace chunks periodically to keep connection alive
+    const stream = new ReadableStream({
+      async start(controller) {
+        // Kick off upstream fetch
+        const upstream = await fetch('https://api.openai.com/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${apiKey}`,
+          },
+          body: JSON.stringify(optimizedBody),
+        });
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      return new Response(JSON.stringify({ 
-        error: errorData.error?.message || `OpenAI API error: ${response.status}`,
-        code: errorData.error?.code || response.status
-      }), {
-        status: response.status,
-        headers: {
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*',
-        },
-      });
-    }
+        if (!upstream.ok) {
+          const errorData = await upstream.json().catch(() => ({}));
+          const errPayload = {
+            error: errorData.error?.message || `OpenAI API error: ${upstream.status}`,
+            code: errorData.error?.code || upstream.status
+          };
+          controller.enqueue(new TextEncoder().encode(JSON.stringify(errPayload)));
+          controller.close();
+          return;
+        }
 
-    // Collect streamed response and return as complete JSON
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder();
-    let fullContent = '';
-    let usage = null;
-    let role = 'assistant';
+        const reader = upstream.body.getReader();
+        const decoder = new TextDecoder();
+        const encoder = new TextEncoder();
 
-    // Pump upstream quickly to avoid idle timeout; assemble content concurrently
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      
-      const chunk = decoder.decode(value);
-      const lines = chunk.split('\n').filter(line => line.trim() !== '');
-      
-      for (const line of lines) {
-        if (line.startsWith('data: ')) {
-          const data = line.slice(6);
-          if (data === '[DONE]') continue;
-          
-          try {
-            const parsed = JSON.parse(data);
-            // Capture role if present in early deltas
-            if (parsed.choices?.[0]?.delta?.role) {
-              role = parsed.choices[0].delta.role;
+        let fullContent = '';
+        let usage = null;
+        let role = 'assistant';
+
+        // Heartbeat every 2500ms
+        const heartbeat = setInterval(() => {
+          try { controller.enqueue(encoder.encode(' ')); } catch {}
+        }, 2500);
+
+        try {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            const chunk = decoder.decode(value);
+            const lines = chunk.split('\n').filter(line => line.trim() !== '');
+            for (const line of lines) {
+              if (line.startsWith('data: ')) {
+                const data = line.slice(6);
+                if (data === '[DONE]') continue;
+                try {
+                  const parsed = JSON.parse(data);
+                  if (parsed.choices?.[0]?.delta?.role) {
+                    role = parsed.choices[0].delta.role;
+                  }
+                  const contentDelta = parsed.choices?.[0]?.delta?.content || '';
+                  fullContent += contentDelta;
+                  if (parsed.usage) {
+                    usage = parsed.usage;
+                  }
+                } catch {}
+              }
             }
-            const contentDelta = parsed.choices?.[0]?.delta?.content || '';
-            fullContent += contentDelta;
-            
-            // Capture usage if present (usually in last chunk)
-            if (parsed.usage) {
-              usage = parsed.usage;
-            }
-          } catch (e) {
-            // Skip malformed JSON chunks
+          }
+        } finally {
+          clearInterval(heartbeat);
+        }
+
+        // Attempt server-side repair if JSON object requested
+        const tryParse = (text) => { try { return JSON.parse(text); } catch { return null; } };
+        const repairJson = (text) => {
+          if (!text) return null;
+          let t = text.replace(/[\u0000-\u001F\u007F]/g, '');
+          t = t.replace(/[\u2018\u2019]/g, "'").replace(/[\u201C\u201D]/g, '"');
+          const firstBrace = t.indexOf('{');
+          const lastBrace = t.lastIndexOf('}');
+          if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+            t = t.slice(firstBrace, lastBrace + 1);
+          }
+          t = t.replace(/,\s*([}\]])/g, '$1');
+          const openCount = (t.match(/\{/g) || []).length;
+          const closeCount = (t.match(/\}/g) || []).length;
+          if (closeCount < openCount) t += '}';
+          return tryParse(t);
+        };
+        if (optimizedBody.response_format && optimizedBody.response_format.type === 'json_object') {
+          const parsed = tryParse(fullContent) || repairJson(fullContent);
+          if (parsed) {
+            fullContent = JSON.stringify(parsed);
           }
         }
+
+        const result = {
+          id: `bl-${Date.now()}`,
+          object: 'chat.completion',
+          created: Math.floor(Date.now() / 1000),
+          model: optimizedBody.model || 'gpt-4o',
+          choices: [{ index: 0, message: { role, content: fullContent }, finish_reason: 'stop' }],
+          usage: usage || { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 },
+        };
+
+        controller.enqueue(encoder.encode(JSON.stringify(result)));
+        controller.close();
       }
-    }
+    });
 
-    // If client requested a JSON object, attempt to repair/parse server-side and
-    // ensure the content is a valid JSON string to avoid client-side parse errors.
-    const tryParse = (text) => {
-      try { return JSON.parse(text); } catch { return null; }
-    };
-    const repairJson = (text) => {
-      if (!text) return null;
-      let t = text.replace(/[\u0000-\u001F\u007F]/g, '');
-      t = t.replace(/[\u2018\u2019]/g, "'").replace(/[\u201C\u201D]/g, '"');
-      const firstBrace = t.indexOf('{');
-      const lastBrace = t.lastIndexOf('}');
-      if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
-        t = t.slice(firstBrace, lastBrace + 1);
-      }
-      t = t.replace(/,\s*([}\]])/g, '$1');
-      const openCount = (t.match(/\{/g) || []).length;
-      const closeCount = (t.match(/\}/g) || []).length;
-      if (closeCount < openCount) t += '}';
-      return tryParse(t);
-    };
-
-    if (optimizedBody.response_format && optimizedBody.response_format.type === 'json_object') {
-      const parsed = tryParse(fullContent) || repairJson(fullContent);
-      if (parsed) {
-        fullContent = JSON.stringify(parsed);
-      }
-    }
-
-    // Return the complete response in OpenAI format – matching client expectations
-    const result = {
-      id: `bl-${Date.now()}`,
-      object: 'chat.completion',
-      created: Math.floor(Date.now() / 1000),
-      model: optimizedBody.model || 'gpt-4o',
-      choices: [{
-        index: 0,
-        message: {
-          role,
-          content: fullContent,
-        },
-        finish_reason: 'stop',
-      }],
-      usage: usage || { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 },
-    };
-
-    return new Response(JSON.stringify(result), {
+    return new Response(stream, {
       status: 200,
       headers: {
         'Content-Type': 'application/json',
