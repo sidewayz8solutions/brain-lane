@@ -2,12 +2,15 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Bot, Users, Cpu, Zap, Play, Settings2 } from 'lucide-react';
 import MultiAgentPanel from '@/components/agent/MultiAgentPanel';
+import { useProjectStore } from '@/store/projectStore';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 
 export default function Agents() {
     const [selectedProject, setSelectedProject] = useState(null);
+    const projects = useProjectStore((state) => state.projects);
+    const getProjectAsync = useProjectStore((state) => state.getProjectAsync);
 
     // Sample project for demo
     const demoProject = {
@@ -90,6 +93,25 @@ export default function Agents() {
         };
         return colors[color] || colors.blue;
     };
+
+    // Build files array from selected project or fallback demo
+    const [projectFiles, setProjectFiles] = useState([]);
+
+    useEffect(() => {
+        const effectiveProject = selectedProject || projects[0] || null;
+        if (effectiveProject?.id) {
+            // Load with files via async store to get file_contents
+            getProjectAsync(effectiveProject.id).then((fullProject) => {
+                const fc = fullProject?.file_contents || {};
+                const filesArray = Object.keys(fc).map((path) => ({ path, content: fc[path] || '' }));
+                setProjectFiles(filesArray);
+            }).catch(() => {
+                setProjectFiles([]);
+            });
+        } else {
+            setProjectFiles([]);
+        }
+    }, [selectedProject, projects]);
 
     return (
         <div className="min-h-screen bg-slate-950 text-white p-8">
@@ -195,7 +217,7 @@ export default function Agents() {
                     </TabsList>
 
                     <TabsContent value="orchestrate">
-                        <MultiAgentPanel project={demoProject} />
+                        <MultiAgentPanel files={projectFiles} projectName={(selectedProject?.name || projects[0]?.name || 'Project')} />
                     </TabsContent>
 
                     <TabsContent value="agents">

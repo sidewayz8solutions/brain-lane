@@ -1,5 +1,6 @@
 import { useProjectStore, useTaskStore } from '@/store/projectStore';
 import { InvokeLLM } from '@/services/aiService';
+import { projectScanner } from '@/services/projectScanner';
 
 const IMPORTANT_PATHS = ['package.json', 'requirements.txt', 'README.md', 'setup.py', 'pyproject.toml'];
 const CODE_EXTENSIONS = ['.js', '.jsx', '.ts', '.tsx', '.py'];
@@ -374,6 +375,74 @@ export async function runProjectAnalysis(projectId) {
   }
 
   console.log('🔍 Starting analysis with', fileCount, 'files');
+
+  // Always run local ProjectScanner first to populate baseline data
+  // This ensures Architecture/Dependencies/Issues pages have live content even if AI times out
+  const filesForScanner = filePaths.map((path) => ({ path, content: fileContents[path] || '' }));
+  let localDiagnosis = null;
+  try {
+    localDiagnosis = await projectScanner.scan(filesForScanner, {
+      onProgress: (pct, msg) => {
+        if (pct % 25 === 0) console.log(`🧭 Scanner ${pct}% – ${msg}`);
+      },
+    });
+    const fileTreeFromScanner = filePaths.map((p) => ({ path: p, type: 'file', size: (fileContents[p] || '').length }));
+    // Map scanner output to project fields
+    const baselinePayload = {
+      summary: localDiagnosis.summary || projectData.summary,
+      detected_stack: Array.isArray(projectData.detected_stack) && projectData.detected_stack.length
+        ? projectData.detected_stack
+        : (localDiagnosis.frameworks || []),
+      architecture: {
+        pattern: (localDiagnosis.frameworks || [])[0] || 'monolith',
+        components: (localDiagnosis.structure?.directories || []).slice(0, 50).map((dir) => ({
+          name: dir.split('/').pop() || dir,
+          responsibility: 'Module',
+          files: filePaths.filter((fp) => fp.startsWith(dir)).slice(0, 20),
+        })),
+        external_dependencies: localDiagnosis.dependencies?.external || [],
+        data_flow: 'Derived from import graph and entry points.',
+      },
+      // Derive basic smells/issues from scanner issues list
+      code_smells: (localDiagnosis.issues || []).slice(0, 100).map((i) => ({
+        type: i.type,
+        severity: i.severity,
+        file: i.file,
+        description: i.message,
+        suggestion: 'See analysis details',
+      })),
+      // Security subset (type === 'security')
+      security_vulnerabilities: (localDiagnosis.issues || [])
+        .filter((i) => i.type === 'security')
+        .slice(0, 50)
+        .map((i) => ({
+          cwe_id: 'N/A',
+          title: i.message,
+          severity: i.severity || 'high',
+          file: i.file,
+          line: i.line,
+          description: i.message,
+          recommendation: 'Remove hardcoded secrets, validate inputs, and follow security best practices.',
+        })),
+      // Leave test suggestions empty; filled by AI or heuristics later
+      test_suggestions: projectData.test_suggestions || [],
+      issues: (localDiagnosis.issues || []).slice(0, 100).map((i) => ({
+        type: i.type,
+        severity: i.severity,
+        file: i.file,
+        line: i.line,
+        description: i.message,
+      })),
+      file_tree: fileTreeFromScanner,
+      file_contents: fileContents,
+      status: 'analyzing',
+      analysis_strategy: 'local-baseline',
+    };
+    projectStore.updateProject(projectId, baselinePayload);
+    console.log('✅ Local baseline analysis populated');
+  } catch (scannerErr) {
+    console.warn('⚠️ Local scanner failed:', scannerErr?.message || scannerErr);
+  }
   const fileList = formatFileList(filePaths, MAX_FILE_LIST_ENTRIES) || 'No files extracted';
   const importantFiles = collectImportantFiles(fileContents);
   const sampleCode = collectSampleCode(fileContents);
@@ -430,7 +499,7 @@ export async function runProjectAnalysis(projectId) {
 
     console.log('✅ Analysis complete, updating project store');
 
-    let finalResult = analysisResult || {};
+  let finalResult = analysisResult || {};
 
     if (!Array.isArray(finalResult.tasks)) {
       finalResult.tasks = [];
@@ -488,18 +557,42 @@ export async function runProjectAnalysis(projectId) {
         return persistAnalysis(fallbackResult, { strategy: 'fallback' });
       } catch (fallbackError) {
         console.error('❌ Fallback analysis also failed:', fallbackError);
-        projectStore.updateProject(projectId, {
-          status: 'error',
-          error_message: fallbackError.message,
-        });
-        throw fallbackError;
+        // If local baseline exists, mark project ready with baseline data instead of erroring out
+        if (localDiagnosis) {
+          const baselineReady = {
+            ...projectData,
+            status: 'ready',
+            analysis_strategy: 'baseline-only',
+          };
+          projectStore.updateProject(projectId, baselineReady);
+          console.warn('⚠️ Using baseline-only results due to AI failure');
+          return baselineReady;
+        } else {
+          projectStore.updateProject(projectId, {
+            status: 'error',
+            error_message: fallbackError.message,
+          });
+          throw fallbackError;
+        }
       }
     }
 
-    projectStore.updateProject(projectId, {
-      status: 'error',
-      error_message: error.message,
-    });
-    throw error;
+    // If local baseline exists, mark ready with baseline
+    if (localDiagnosis) {
+      const baselineReady = {
+        ...projectData,
+        status: 'ready',
+        analysis_strategy: 'baseline-only',
+      };
+      projectStore.updateProject(projectId, baselineReady);
+      console.warn('⚠️ Using baseline-only results due to AI failure');
+      return baselineReady;
+    } else {
+      projectStore.updateProject(projectId, {
+        status: 'error',
+        error_message: error.message,
+      });
+      throw error;
+    }
   }
 }
