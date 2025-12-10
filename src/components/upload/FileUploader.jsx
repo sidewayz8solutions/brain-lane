@@ -161,7 +161,7 @@ export default function FileUploader({ onUpload, isUploading }) {
                         onClick={() => { setUploadMode(mode); clearSelection(); }}
                         className={cn(
                             "relative flex-1 flex items-center justify-center gap-2 py-3.5 px-4 rounded-xl text-sm font-medium transition-colors",
-                            uploadMode === mode ? "text-slate-900" : "text-slate-400 hover:text-white"
+                            uploadMode === mode ? "text-slate-900" : "text-slate-200 hover:text-white"
                         )}
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
@@ -233,8 +233,8 @@ export default function FileUploader({ onUpload, isUploading }) {
                                 dragActive
                                     ? "border-white/70 bg-white/10"
                                     : selectedFile
-                                        ? "border-slate-200/60 bg-slate-200/5"
-                                        : "border-slate-400/40 hover:border-white/60 bg-slate-800/30",
+                                        ? "border-slate-200/60 bg-slate-900/30"
+                                        : "border-slate-300/50 hover:border-white/70 bg-slate-900/40",
                                 isUploading && "pointer-events-none"
                             )}
                             style={{
@@ -393,14 +393,14 @@ export default function FileUploader({ onUpload, isUploading }) {
                                         </motion.div>
                                         <div>
                                             <p 
-                                                className="text-purple-300 font-medium text-lg"
-                                                style={{ textShadow: '0 0 10px rgba(168, 85, 247, 0.8), 0 0 20px rgba(168, 85, 247, 0.5)' }}
+                                                className="text-white font-semibold text-lg"
+                                                style={{ textShadow: '0 0 14px rgba(168, 85, 247, 0.85), 0 0 28px rgba(168, 85, 247, 0.55)' }}
                                             >
                                                 {dragActive ? 'Drop it here!' : 'Drop your project ZIP here'}
                                             </p>
                                             <p 
-                                                className="text-purple-400/80 text-sm mt-2"
-                                                style={{ textShadow: '0 0 8px rgba(168, 85, 247, 0.5)' }}
+                                                className="text-white/90 text-sm mt-2"
+                                                style={{ textShadow: '0 0 10px rgba(168, 85, 247, 0.5)' }}
                                             >
                                                 or click to browse
                                             </p>
@@ -414,8 +414,8 @@ export default function FileUploader({ onUpload, isUploading }) {
                                                 transition={{ delay: 0.3 }}
                                             >
                                                 <span 
-                                                    className="text-purple-300 text-xs font-medium"
-                                                    style={{ textShadow: '0 0 6px rgba(168, 85, 247, 0.6)' }}
+                                                    className="text-white text-xs font-medium"
+                                                    style={{ textShadow: '0 0 8px rgba(168, 85, 247, 0.6)' }}
                                                 >
                                                     Max {MAX_SIZE_MB}MB
                                                 </span>
@@ -424,16 +424,16 @@ export default function FileUploader({ onUpload, isUploading }) {
 
                                         {/* Supported stacks - Purple Glow */}
                                         <div className="pt-4">
-                                            <p className="text-purple-400/60 text-xs mb-3" style={{ textShadow: '0 0 6px rgba(168, 85, 247, 0.4)' }}>Supports:</p>
+                                            <p className="text-white/90 text-xs mb-3" style={{ textShadow: '0 0 8px rgba(168, 85, 247, 0.5)' }}>Supports:</p>
                                             <div className="flex items-center justify-center gap-2 flex-wrap">
                                                 {['React', 'Next.js', 'Vue', 'Python', 'Node.js', 'FastAPI', 'Django', 'Flask'].map((tech, i) => {
                                                     return (
                                                         <motion.span
                                                             key={tech}
-                                                            className="px-3 py-1 text-xs rounded-full text-purple-300 border border-purple-500/30 hover:border-purple-400/60 transition-colors"
+                                                            className="px-3 py-1 text-xs rounded-full text-white border border-purple-500/40 hover:border-purple-400/70 transition-colors"
                                                             style={{
-                                                                background: 'linear-gradient(145deg, rgba(168, 85, 247, 0.12) 0%, rgba(168, 85, 247, 0.05) 100%)',
-                                                                textShadow: '0 0 6px rgba(168, 85, 247, 0.5)'
+                                                                background: 'linear-gradient(145deg, rgba(168, 85, 247, 0.20) 0%, rgba(168, 85, 247, 0.08) 100%)',
+                                                                textShadow: '0 0 10px rgba(168, 85, 247, 0.6)'
                                                             }}
                                                             initial={{ opacity: 0, scale: 0 }}
                                                             animate={{ opacity: 1, scale: 1 }}
@@ -447,8 +447,8 @@ export default function FileUploader({ onUpload, isUploading }) {
                                             </div>
                                         </div>
                                         <p 
-                                            className="text-purple-400/60 text-xs mt-4"
-                                            style={{ textShadow: '0 0 4px rgba(168, 85, 247, 0.3)' }}
+                                            className="text-white/80 text-xs mt-4"
+                                            style={{ textShadow: '0 0 8px rgba(168, 85, 247, 0.4)' }}
                                         >
                                             💡 Tip: Exclude node_modules & virtual environments
                                         </p>
