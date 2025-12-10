@@ -5,7 +5,7 @@ const AI_CONFIG = {
   // For demo mode, we'll use mock responses
   // In production, set VITE_OPENAI_API_KEY in .env
   apiKey: import.meta.env.VITE_OPENAI_API_KEY || null,
-  model: 'gpt-4o', // Better at structured JSON output
+  model: 'gpt-4o-mini', // Faster first token; good for JSON with post-processing
   demoMode: !import.meta.env.VITE_OPENAI_API_KEY,
 };
 
@@ -148,6 +148,9 @@ export const InvokeLLM = async ({ prompt, response_json_schema, add_context_from
     console.log('🚀 Making real OpenAI API call...');
     console.log('📦 Prompt length:', prompt.length, 'chars');
     
+    // For very large prompts, avoid response_format to reduce latency
+    const isLargePrompt = prompt.length > 8000;
+
     const requestBody = {
       model: AI_CONFIG.model,
       messages: [
@@ -157,9 +160,9 @@ export const InvokeLLM = async ({ prompt, response_json_schema, add_context_from
         },
         { role: 'user', content: prompt }
       ],
-      response_format: response_json_schema ? { type: 'json_object' } : undefined,
-      max_tokens: 4000,
-      temperature: 0.3, // Lower temperature for more consistent structured output
+      response_format: (!isLargePrompt && response_json_schema) ? { type: 'json_object' } : undefined,
+      max_tokens: 1200,
+      temperature: 0.2, // Lower temperature for more consistent structured output
     };
     
     // Use proxy endpoint when deployed (avoids CORS), direct API when local

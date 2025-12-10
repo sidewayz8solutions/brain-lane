@@ -76,6 +76,7 @@ export default async function handler(req) {
     let usage = null;
     let role = 'assistant';
 
+    // Pump upstream quickly to avoid idle timeout; assemble content concurrently
     while (true) {
       const { done, value } = await reader.read();
       if (done) break;
