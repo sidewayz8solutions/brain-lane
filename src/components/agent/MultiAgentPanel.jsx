@@ -36,6 +36,7 @@ import {
   AGENT_DEFINITIONS,
   PRESET_PIPELINES,
 } from '../../services/multiAgentOrchestrator';
+import { useProjectStore, useTaskStore } from '@/store/projectStore';
 
 const AGENT_ICONS = {
   [AgentType.CODE_AUDITOR]: Shield,
@@ -63,6 +64,9 @@ export default function MultiAgentPanel({ files = [], projectName = 'Project' })
   const [results, setResults] = useState(null);
   const [activeTab, setActiveTab] = useState('agents');
   const [executionHistory, setExecutionHistory] = useState([]);
+  const currentProject = useProjectStore((s) => s.currentProject);
+  const createTask = useTaskStore((s) => s.createTask);
+  const updateProject = useProjectStore((s) => s.updateProject);
 
   useEffect(() => {
     setAgents(orchestrator.getAgents());
@@ -99,6 +103,28 @@ export default function MultiAgentPanel({ files = [], projectName = 'Project' })
 
       setResults(execution);
       setExecutionHistory(orchestrator.getHistory());
+
+      // Persist lightweight task results for visibility
+      if (execution?.results?.length) {
+        execution.results.forEach((r) => {
+          createTask({
+            project_id: currentProject?.id,
+            title: `${AGENT_DEFINITIONS[r.agent]?.name || r.agent} result`,
+            description: r.analysis || '',
+            status: r.success ? 'completed' : 'failed',
+            priority: 'medium',
+            tags: ['agent', r.agent],
+          });
+        });
+      }
+
+      // Update project summary minimally
+      if (currentProject?.id) {
+        updateProject(currentProject.id, {
+          updated_at: new Date().toISOString(),
+          status: 'ready',
+        });
+      }
     } catch (error) {
       console.error('Pipeline execution failed:', error);
     } finally {

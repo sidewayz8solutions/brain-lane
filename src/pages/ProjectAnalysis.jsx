@@ -36,6 +36,7 @@ import ArchitectureDiagram from '../components/visualization/ArchitectureDiagram
 import DependencyGraph from '../components/visualization/DependencyGraph';
 import ComplexityMetrics from '../components/visualization/ComplexityMetrics';
 import { useProjectStore, useTaskStore } from '@/store/projectStore';
+import { orchestrator, AGENT_DEFINITIONS } from '@/services/multiAgentOrchestrator';
 
 export default function ProjectAnalysis() {
     const urlParams = new URLSearchParams(window.location.search);
@@ -50,6 +51,7 @@ export default function ProjectAnalysis() {
     const getProject = useProjectStore((state) => state.getProject);
     const getProjectAsync = useProjectStore((state) => state.getProjectAsync);
     const updateProject = useProjectStore((state) => state.updateProject);
+    const createTask = useTaskStore((state) => state.createTask);
     
     // Use projectData as the source of truth (it has full analysis data)
     // Fall back to store project for basic info
@@ -77,6 +79,39 @@ export default function ProjectAnalysis() {
                     console.log('📂 Project loaded:', p.name, 'Status:', p.status, 'Files:', fileCount);
                     if (fileCount === 0) {
                         console.warn('⚠️ No files loaded! Check if files were extracted and saved correctly.');
+                    }
+                    // Auto-run agents once post upload to generate real metrics
+                    try {
+                        const alreadyBootstrapped = p.agents_bootstrapped === true;
+                        if (!alreadyBootstrapped && fileCount > 0) {
+                            updateProject(p.id, { agents_bootstrapped: true, status: 'analyzing' });
+                            const filesArray = Object.keys(p.file_contents).map((path) => ({ path, content: p.file_contents[path] || '' }));
+                            (async () => {
+                                try {
+                                    const suggestedAgents = await orchestrator.smartRoute(filesArray, 'Analyze and prepare initial health metrics');
+                                    const exec = await orchestrator.runPipeline(filesArray, {
+                                        agents: suggestedAgents,
+                                        onProgress: () => {},
+                                    });
+                                    exec?.results?.forEach((r) => {
+                                        createTask({
+                                            project_id: p.id,
+                                            title: `${AGENT_DEFINITIONS[r.agent]?.name || r.agent} result`,
+                                            description: r.analysis || '',
+                                            status: r.success ? 'completed' : 'failed',
+                                            priority: 'medium',
+                                            tags: ['agent', r.agent],
+                                        });
+                                    });
+                                    updateProject(p.id, { status: 'ready' });
+                                } catch (e) {
+                                    console.warn('Auto agent bootstrap failed:', e);
+                                    updateProject(p.id, { status: 'ready' });
+                                }
+                            })();
+                        }
+                    } catch (e) {
+                        console.warn('Bootstrap check failed:', e);
                     }
                 } else {
                     console.error('❌ Project not found:', projectId);

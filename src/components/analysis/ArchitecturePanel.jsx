@@ -2,6 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Box, ArrowRight, Database, Globe, Server, Layout, Layers } from 'lucide-react';
 import { cn } from "@/lib/utils";
+import { useProjectStore } from '@/store/projectStore';
 
 const componentIcons = {
     'frontend': Layout,
@@ -12,7 +13,11 @@ const componentIcons = {
 };
 
 export default function ArchitecturePanel({ architecture }) {
-    if (!architecture) {
+    const currentProject = useProjectStore((s) => s.currentProject);
+    const baselineArch = currentProject?.architecture;
+    const arch = architecture || baselineArch || null;
+
+    if (!arch) {
         return (
             <div className="text-center py-12 text-slate-500">
                 <Layers className="w-12 h-12 mx-auto mb-3 opacity-50" />
@@ -24,7 +29,7 @@ export default function ArchitecturePanel({ architecture }) {
     return (
         <div className="space-y-6">
             {/* Architecture Pattern */}
-            {architecture.pattern && (
+            {arch.pattern && (
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -36,20 +41,20 @@ export default function ArchitecturePanel({ architecture }) {
                         </div>
                         <div>
                             <p className="text-xs text-slate-500 uppercase tracking-wider">Architecture Pattern</p>
-                            <p className="text-lg font-medium text-white">{architecture.pattern}</p>
+                            <p className="text-lg font-medium text-white">{arch.pattern}</p>
                         </div>
                     </div>
                 </motion.div>
             )}
 
             {/* Components */}
-            {architecture.components?.length > 0 && (
+            {arch.components?.length > 0 && (
                 <div>
                     <h4 className="text-sm font-medium text-slate-400 uppercase tracking-wider mb-3">
                         Key Components
                     </h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        {architecture.components.map((component, idx) => {
+                        {arch.components.map((component, idx) => {
                             const iconKey = component.name?.toLowerCase().includes('frontend') ? 'frontend'
                                 : component.name?.toLowerCase().includes('backend') ? 'backend'
                                 : component.name?.toLowerCase().includes('database') ? 'database'
@@ -99,25 +104,25 @@ export default function ArchitecturePanel({ architecture }) {
             )}
 
             {/* Data Flow */}
-            {architecture.data_flow && (
+            {arch.data_flow && (
                 <div>
                     <h4 className="text-sm font-medium text-slate-400 uppercase tracking-wider mb-3">
                         Data Flow
                     </h4>
                     <div className="p-4 rounded-xl bg-slate-800/50 border border-slate-700/50">
-                        <p className="text-sm text-slate-300 leading-relaxed">{architecture.data_flow}</p>
+                        <p className="text-sm text-slate-300 leading-relaxed">{arch.data_flow}</p>
                     </div>
                 </div>
             )}
 
             {/* External Dependencies */}
-            {architecture.external_dependencies?.length > 0 && (
+            {arch.external_dependencies?.length > 0 && (
                 <div>
                     <h4 className="text-sm font-medium text-slate-400 uppercase tracking-wider mb-3">
                         External Dependencies
                     </h4>
                     <div className="flex flex-wrap gap-2">
-                        {architecture.external_dependencies.map((dep, idx) => (
+                        {arch.external_dependencies.map((dep, idx) => (
                             <motion.span
                                 key={idx}
                                 initial={{ opacity: 0, scale: 0 }}

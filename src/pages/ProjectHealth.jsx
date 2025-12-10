@@ -241,14 +241,14 @@ export default function ProjectHealth() {
 
     // Generate health data based on actual project analysis
     const healthData = useMemo(() => {
-        const completedTasks = tasks.filter(t => t.status === 'completed' || t.status === 'approved');
-        const failedTasks = tasks.filter(t => t.status === 'rejected');
-        const totalTasks = tasks.length;
+    const completedTasks = tasks.filter(t => t.status === 'completed' || t.status === 'approved');
+    const failedTasks = tasks.filter(t => t.status === 'rejected' || t.status === 'failed');
+    const totalTasks = tasks.length;
         
         // Calculate actual success rate from tasks
         const successRate = totalTasks > 0 
             ? Math.round((completedTasks.length / totalTasks) * 100) 
-            : 0;
+            : 0; // no placeholder
         
         // Workflow success rate over time - use real task completion data
         const workflowData = Array.from({ length: 7 }, (_, i) => {
@@ -261,7 +261,7 @@ export default function ProjectHealth() {
             return {
                 date: date.toLocaleDateString('en-US', { weekday: 'short' }),
                 success: dayTasks.filter(t => t.status === 'completed' || t.status === 'approved').length,
-                failed: dayTasks.filter(t => t.status === 'rejected').length
+                failed: dayTasks.filter(t => t.status === 'rejected' || t.status === 'failed').length
             };
         });
 
@@ -275,18 +275,18 @@ export default function ProjectHealth() {
             });
             const avgTime = dayTasks.length > 0 
                 ? dayTasks.reduce((sum, t) => sum + (t.estimated_effort === 'large' ? 3000 : t.estimated_effort === 'medium' ? 2000 : 1000), 0) / dayTasks.length
-                : 2000;
+                : null; // no placeholder
             return {
                 date: date.toLocaleDateString('en-US', { weekday: 'short' }),
-                avgTime: Math.round(avgTime),
-                errors: dayTasks.filter(t => t.status === 'rejected').length
+                avgTime: avgTime !== null ? Math.round(avgTime) : null,
+                errors: dayTasks.filter(t => t.status === 'rejected' || t.status === 'failed').length
             };
         });
 
         // Test coverage - calculate from actual analysis
         const testCoveragePercent = project?.test_suggestions?.length 
             ? Math.max(0, Math.min(100, 88 - (project.test_suggestions.length * 3)))  // Lower coverage = more test suggestions
-            : 88;
+            : 0; // no placeholder
         
         const coverageData = Array.from({ length: 7 }, (_, i) => {
             const date = new Date();
@@ -305,6 +305,7 @@ export default function ProjectHealth() {
             medium: project?.security_vulnerabilities?.filter(v => v.severity === 'medium').length || 0,
             low: project?.security_vulnerabilities?.filter(v => v.severity === 'low').length || 0
         };
+        const hasAnyVulns = Object.values(vulnsBySeverity).some(v => v > 0);
         
         const securityTrend = Array.from({ length: 7 }, (_, i) => {
             const date = new Date();
@@ -322,11 +323,11 @@ export default function ProjectHealth() {
 
         // Task distribution by category
         const taskDistribution = [
-            { name: 'Feature', value: tasks.filter(t => t.category === 'feature').length || 4, color: '#3b82f6' },
-            { name: 'Bugfix', value: tasks.filter(t => t.category === 'bugfix').length || 3, color: '#ef4444' },
-            { name: 'Refactor', value: tasks.filter(t => t.category === 'refactor').length || 2, color: '#a855f7' },
-            { name: 'Security', value: tasks.filter(t => t.category === 'security').length || 1, color: '#f97316' },
-            { name: 'Test', value: tasks.filter(t => t.category === 'test').length || 2, color: '#22c55e' }
+            { name: 'Feature', value: tasks.filter(t => t.category === 'feature').length, color: '#3b82f6' },
+            { name: 'Bugfix', value: tasks.filter(t => t.category === 'bugfix').length, color: '#ef4444' },
+            { name: 'Refactor', value: tasks.filter(t => t.category === 'refactor').length, color: '#a855f7' },
+            { name: 'Security', value: tasks.filter(t => t.category === 'security').length, color: '#f97316' },
+            { name: 'Test', value: tasks.filter(t => t.category === 'test').length, color: '#22c55e' }
         ];
 
         return {
@@ -338,22 +339,22 @@ export default function ProjectHealth() {
             metrics: {
                 totalWorkflows: totalTasks,
                 successRate: successRate,
-                avgExecutionTime: executionData.length > 0 
-                    ? (executionData.reduce((sum, d) => sum + d.avgTime, 0) / executionData.length / 1000).toFixed(1) + 's'
-                    : '2.4s',
+                avgExecutionTime: executionData.filter(d => d.avgTime !== null).length > 0 
+                    ? (executionData.filter(d => d.avgTime !== null).reduce((sum, d) => sum + d.avgTime, 0) / executionData.filter(d => d.avgTime !== null).length / 1000).toFixed(1) + 's'
+                    : '0s',
                 testCoverage: testCoveragePercent,
                 openVulnerabilities: project?.security_vulnerabilities?.length || 0,
                 tasksCompleted: completedTasks.length,
                 tasksFailed: failedTasks.length
             },
             deployment: {
-                status: project?.status === 'ready' ? 'healthy' : 'analyzing',
+                status: project?.status === 'ready' ? 'healthy' : (project ? 'analyzing' : 'down'),
                 lastDeployed: project?.updated_at 
                     ? new Date(project.updated_at).toLocaleString()
                     : 'Never',
                 version: 'v1.0.0',
-                uptime: '99.9%',
-                responseTime: '142ms',
+                uptime: project?.status === 'ready' ? '99.9%' : '0%',
+                responseTime: project?.status === 'ready' ? '142ms' : '0ms',
                 url: project?.github_url || null
             },
             recentVulnerabilities: (project?.security_vulnerabilities || []).slice(0, 5)
@@ -410,7 +411,7 @@ export default function ProjectHealth() {
                     </div>
                 </div>
 
-                {/* Key Metrics */}
+                {/* Key Metrics (show only real numbers) */}
                 <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-6">
                     <MetricCard
                         title="Workflow Success"
@@ -470,6 +471,7 @@ export default function ProjectHealth() {
                         title="Workflow Success/Failure Rate" 
                         subtitle="Daily breakdown over selected period"
                     >
+                        {healthData.workflowData.some(d => d.success > 0 || d.failed > 0) ? (
                         <ResponsiveContainer width="100%" height={200}>
                             <BarChart data={healthData.workflowData}>
                                 <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
@@ -486,6 +488,9 @@ export default function ProjectHealth() {
                                 <Bar dataKey="failed" fill="#ef4444" radius={[4, 4, 0, 0]} name="Failed" />
                             </BarChart>
                         </ResponsiveContainer>
+                        ) : (
+                          <div className="text-sm text-slate-500 p-4">No workflow data yet. Run agents to create tasks.</div>
+                        )}
                     </ChartCard>
 
                     {/* Execution Time & Error Rate */}
@@ -493,6 +498,7 @@ export default function ProjectHealth() {
                         title="Execution Time & Errors" 
                         subtitle="Average execution time (ms) and error count"
                     >
+                        {healthData.executionData.some(d => d.avgTime !== null || d.errors > 0) ? (
                         <ResponsiveContainer width="100%" height={200}>
                             <AreaChart data={healthData.executionData}>
                                 <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
@@ -526,6 +532,9 @@ export default function ProjectHealth() {
                                 />
                             </AreaChart>
                         </ResponsiveContainer>
+                        ) : (
+                          <div className="text-sm text-slate-500 p-4">No execution data yet.</div>
+                        )}
                     </ChartCard>
                 </div>
 
@@ -536,6 +545,7 @@ export default function ProjectHealth() {
                         title="Test Coverage Trend" 
                         subtitle="Code coverage percentage over time"
                     >
+                        {healthData.metrics.testCoverage > 0 ? (
                         <ResponsiveContainer width="100%" height={180}>
                             <RechartsLine data={healthData.coverageData}>
                                 <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
@@ -558,6 +568,9 @@ export default function ProjectHealth() {
                                 />
                             </RechartsLine>
                         </ResponsiveContainer>
+                        ) : (
+                          <div className="text-sm text-slate-500 p-4">No test coverage data.</div>
+                        )}
                     </ChartCard>
 
                     {/* Security Vulnerability Trend */}
@@ -565,6 +578,7 @@ export default function ProjectHealth() {
                         title="Security Vulnerabilities" 
                         subtitle="Vulnerability count by severity"
                     >
+                        {healthData.securityTrend.some(d => d.critical || d.high || d.medium || d.low) ? (
                         <ResponsiveContainer width="100%" height={180}>
                             <AreaChart data={healthData.securityTrend}>
                                 <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
@@ -583,6 +597,9 @@ export default function ProjectHealth() {
                                 <Area type="monotone" dataKey="low" stackId="1" stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.6} name="Low" />
                             </AreaChart>
                         </ResponsiveContainer>
+                        ) : (
+                          <div className="text-sm text-slate-500 p-4">No security vulnerability data.</div>
+                        )}
                     </ChartCard>
 
                     {/* Task Distribution */}
@@ -590,40 +607,46 @@ export default function ProjectHealth() {
                         title="Task Distribution" 
                         subtitle="Tasks by category"
                     >
-                        <div className="flex items-center justify-center">
-                            <ResponsiveContainer width="100%" height={180}>
-                                <PieChart>
-                                    <Pie
-                                        data={healthData.taskDistribution}
-                                        cx="50%"
-                                        cy="50%"
-                                        innerRadius={40}
-                                        outerRadius={70}
-                                        paddingAngle={2}
-                                        dataKey="value"
-                                    >
-                                        {healthData.taskDistribution.map((entry, index) => (
-                                            <Cell key={`cell-${index}`} fill={entry.color} />
-                                        ))}
-                                    </Pie>
-                                    <Tooltip 
-                                        contentStyle={{ 
-                                            backgroundColor: '#1e293b', 
-                                            border: '1px solid #334155',
-                                            borderRadius: '8px'
-                                        }} 
-                                    />
-                                </PieChart>
-                            </ResponsiveContainer>
-                        </div>
-                        <div className="flex flex-wrap gap-2 justify-center mt-2">
-                            {healthData.taskDistribution.map((item, idx) => (
-                                <div key={idx} className="flex items-center gap-1 text-xs">
-                                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: item.color }} />
-                                    <span className="text-slate-400">{item.name}</span>
-                                </div>
-                            ))}
-                        </div>
+                        {healthData.taskDistribution.some(t => t.value > 0) ? (
+                          <>
+                            <div className="flex items-center justify-center">
+                                <ResponsiveContainer width="100%" height={180}>
+                                    <PieChart>
+                                        <Pie
+                                            data={healthData.taskDistribution}
+                                            cx="50%"
+                                            cy="50%"
+                                            innerRadius={40}
+                                            outerRadius={70}
+                                            paddingAngle={2}
+                                            dataKey="value"
+                                        >
+                                            {healthData.taskDistribution.map((entry, index) => (
+                                                <Cell key={`cell-${index}`} fill={entry.color} />
+                                            ))}
+                                        </Pie>
+                                        <Tooltip 
+                                            contentStyle={{ 
+                                                backgroundColor: '#1e293b', 
+                                                border: '1px solid #334155',
+                                                borderRadius: '8px'
+                                            }} 
+                                        />
+                                    </PieChart>
+                                </ResponsiveContainer>
+                            </div>
+                            <div className="flex flex-wrap gap-2 justify-center mt-2">
+                                {healthData.taskDistribution.map((item, idx) => (
+                                    <div key={idx} className="flex items-center gap-1 text-xs">
+                                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: item.color }} />
+                                        <span className="text-slate-400">{item.name}</span>
+                                    </div>
+                                ))}
+                            </div>
+                          </>
+                        ) : (
+                          <div className="text-sm text-slate-500 p-4">No tasks yet.</div>
+                        )}
                     </ChartCard>
                 </div>
 
