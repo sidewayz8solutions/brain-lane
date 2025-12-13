@@ -186,13 +186,36 @@ export const InvokeLLM = async ({ prompt, response_json_schema, add_context_from
       throw new Error(`OpenAI API Error: ${errorMsg}`);
     }
     
-  const data = await response.json();
+    // The streaming proxy may include whitespace heartbeats - trim and parse
+    const rawText = await response.text();
+    const trimmedText = rawText.trim();
+
+    let data;
+    try {
+      data = JSON.parse(trimmedText);
+    } catch (parseErr) {
+      console.error('❌ Failed to parse API response:', trimmedText.slice(0, 200));
+      throw new Error('Invalid response from API - failed to parse JSON');
+    }
+
     console.log('✅ OpenAI API Response received');
     console.log('📊 Usage:', data.usage);
-    
+
+    // Check if the response is an error from the proxy
+    if (data.error) {
+      console.error('❌ API returned error:', data.error);
+      throw new Error(data.error);
+    }
+
+    // Ensure choices array exists
+    if (!data.choices || !Array.isArray(data.choices) || data.choices.length === 0) {
+      console.error('❌ Invalid API response - no choices array:', data);
+      throw new Error('Invalid API response - no choices returned');
+    }
+
     const content = data.choices[0]?.message?.content;
     console.log('📝 Response content length:', content?.length || 0);
-    
+
     // Check if response was cut off
     if (data.choices[0]?.finish_reason === 'length') {
       console.warn('⚠️ Response was truncated due to max_tokens limit');
