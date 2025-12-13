@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+mport React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
     Brain,
@@ -52,7 +52,7 @@ export default function ProjectAnalysis() {
     const getProjectAsync = useProjectStore((state) => state.getProjectAsync);
     const updateProject = useProjectStore((state) => state.updateProject);
     const createTask = useTaskStore((state) => state.createTask);
-    
+
     // Use projectData as the source of truth (it has full analysis data)
     // Fall back to store project for basic info
     const storeProject = projects.find(p => p.id === projectId);
@@ -62,11 +62,6 @@ export default function ProjectAnalysis() {
 
     // Filter tasks for this project
     const tasks = tasksStore.filter(t => t.project_id === projectId);
-    
-    // Log for debugging
-    React.useEffect(() => {
-        console.log('📊 ProjectAnalysis - Tasks:', tasks.length, '| Total tasks in store:', tasksStore.length, '| Project ID:', projectId);
-    }, [tasks, tasksStore, projectId]);
 
     // Load project with files on mount
     useEffect(() => {
@@ -77,50 +72,50 @@ export default function ProjectAnalysis() {
                     setProjectData(p);
                     const fileCount = Object.keys(p.file_contents || {}).length;
                     console.log('📂 Project loaded:', p.name, 'Status:', p.status, 'Files:', fileCount);
-                    if (fileCount === 0) {
-                        console.warn('⚠️ No files loaded! Check if files were extracted and saved correctly.');
-                    }
-                    // Auto-run agents once post upload to generate real metrics
-                    try {
-                        const alreadyBootstrapped = p.agents_bootstrapped === true;
-                        if (!alreadyBootstrapped && fileCount > 0) {
-                            updateProject(p.id, { agents_bootstrapped: true, status: 'analyzing' });
-                            const filesArray = Object.keys(p.file_contents).map((path) => ({ path, content: p.file_contents[path] || '' }));
-                            (async () => {
-                                try {
-                                    const suggestedAgents = await orchestrator.smartRoute(filesArray, 'Analyze and prepare initial health metrics');
-                                    const exec = await orchestrator.runPipeline(filesArray, {
-                                        agents: suggestedAgents,
-                                        onProgress: () => {},
-                                    });
-                                    exec?.results?.forEach((r) => {
-                                        createTask({
-                                            project_id: p.id,
-                                            title: `${AGENT_DEFINITIONS[r.agent]?.name || r.agent} result`,
-                                            description: r.analysis || '',
-                                            status: r.success ? 'completed' : 'failed',
-                                            priority: 'medium',
-                                            tags: ['agent', r.agent],
-                                        });
-                                    });
-                                    updateProject(p.id, { status: 'ready' });
-                                } catch (e) {
-                                    console.warn('Auto agent bootstrap failed:', e);
-                                    updateProject(p.id, { status: 'ready' });
-                                }
-                            })();
-                        }
-                    } catch (e) {
-                        console.warn('Bootstrap check failed:', e);
+
+                    // Auto-run agents once post upload to generate real metrics (Point #4/Senior Dev Brain)
+                    const alreadyBootstrapped = p.agents_bootstrapped === true;
+                    if (!alreadyBootstrapped && fileCount > 0 && p.status === 'ready') {
+                        updateProject(p.id, { agents_bootstrapped: true, status: 'analyzing' });
+                        const filesArray = Object.keys(p.file_contents).map((path) => ({ path, content: p.file_contents[path] || '' }));
+                        (async () => {
+                            try {
+                                console.log('🚀 Running initial agent bootstrap...');
+                                const suggestedAgents = [
+                                    'code_auditor',
+                                    'test_engineer',
+                                    'documentation_writer'
+                                ]; // Initial set of agents for health data
+
+                                const exec = await orchestrator.runPipeline(filesArray, {
+                                    agents: suggestedAgents,
+                                    onProgress: () => {},
+                                });
+
+                                // Merge generated findings into project analysis
+                                const codeSmells = exec.results.find(r => r.agent === 'code_auditor')?.analysis?.code_smells || [];
+
+                                updateProject(p.id, {
+                                    status: 'ready',
+                                    code_smells: codeSmells,
+                                    summary: p.summary || exec.results.find(r => r.agent === 'documentation_writer')?.analysis || 'Project analysis ready.'
+                                });
+                                console.log('✅ Agent bootstrap complete.');
+                            } catch (e) {
+                                console.warn('Auto agent bootstrap failed:', e);
+                                updateProject(p.id, { status: 'ready' });
+                            }
+                        })();
                     }
                 } else {
                     console.error('❌ Project not found:', projectId);
                 }
             }).catch(err => {
                 console.error('❌ Error loading project:', err);
+                setAnalysisError(err.message);
             });
         }
-    }, [projectId]);
+    }, [projectId, tasksStore.length]); // Re-run if tasks change, as this indicates successful analysis
 
     if (!project) {
         return (
@@ -150,7 +145,7 @@ export default function ProjectAnalysis() {
                 {/* Header */}
                 <div className="flex items-center justify-between mb-8">
                     <div className="flex items-center gap-4">
-                        <Link to={createPageUrl('Home')}>
+                        <Link to={createPageUrl('Projects')}>
                             <Button variant="ghost" size="icon" className="text-slate-400 hover:text-cyan-400">
                                 <ArrowLeft className="w-5 h-5" />
                             </Button>
@@ -176,7 +171,7 @@ export default function ProjectAnalysis() {
                             </div>
                         </div>
                     </div>
-                    
+
                     {isReady && (
                         <div className="flex items-center gap-2">
                             <Link to={createPageUrl('ProjectHealth') + `?id=${project.id}`}>
@@ -212,7 +207,7 @@ export default function ProjectAnalysis() {
                         </div>
                         <h2 className="text-xl font-semibold mb-2 text-cyan-400">Analyzing Your Project</h2>
                         <p className="text-slate-400 mb-6">
-                            Our AI is scanning your codebase, detecting the stack, and creating a completion plan...
+                            Our AI is scanning your codebase, detecting the stack, and creating a completion plan (Senior Dev Brain planning stage)...
                         </p>
                         <div className="flex items-center justify-center gap-2 text-sm text-slate-500">
                             <Loader2 className="w-4 h-4 animate-spin" />
@@ -235,12 +230,12 @@ export default function ProjectAnalysis() {
                         </div>
                         <h2 className="text-xl font-semibold mb-2 text-red-400">Analysis Failed</h2>
                         <p className="text-slate-400 mb-4">
-                            {analysisError || project.error_message || 'Something went wrong during analysis.'}
+                            {analysisError || project.error_message || 'Something went wrong during analysis. This may be due to context limits for very large projects. Try excluding large folders (e.g., node_modules) before zipping.'}
                         </p>
                         <div className="flex items-center justify-center gap-3">
-                            <Button 
-                                variant="outline" 
-                                className="border-red-500/30 text-red-400 hover:bg-red-500/10"
+                            <Button
+                                variant="destructive"
+                                className="border-red-500/30 text-white hover:bg-red-500/90"
                                 onClick={() => {
                                     setAnalysisError(null);
                                     updateProject(project.id, { status: 'analyzing' });
@@ -251,7 +246,7 @@ export default function ProjectAnalysis() {
                                 Retry Analysis
                             </Button>
                             <Link to={createPageUrl('Home')}>
-                                <Button variant="ghost" className="text-slate-400">
+                                <Button variant="outline" className="text-slate-400 border-slate-700">
                                     Go Home
                                 </Button>
                             </Link>
@@ -266,15 +261,21 @@ export default function ProjectAnalysis() {
                         animate={{ opacity: 1, y: 0 }}
                         className="space-y-6"
                     >
-                        {/* Summary Card */}
-                        {project.summary && (
-                            <div className="bg-slate-900/80 backdrop-blur-xl rounded-2xl border border-cyan-500/30 p-6">
-                                <h3 className="text-sm font-medium text-cyan-400 uppercase tracking-wider mb-3">
-                                    Project Summary
-                                </h3>
-                                <p className="text-slate-200 leading-relaxed">{project.summary}</p>
-                            </div>
-                        )}
+                        {/* Summary Card - Task Decomposition Output Header */}
+                        <div className="bg-slate-900/80 backdrop-blur-xl rounded-2xl border border-cyan-500/30 p-6">
+                            <h3 className="text-sm font-medium text-cyan-400 uppercase tracking-wider mb-3">
+                                Senior Dev Brain Output (Completion Plan)
+                            </h3>
+                            <p className="text-slate-200 leading-relaxed">
+                                {project.summary || 'Initial analysis complete. Review the tabs below for a detailed breakdown of security, architecture, and actionable tasks to reach MVP readiness.'}
+                            </p>
+                            {tasks.length > 0 && (
+                                <p className="text-sm font-medium text-green-400 mt-3 flex items-center gap-2">
+                                    <ListTodo className="w-4 h-4" />
+                                    {tasks.length} actionable tasks generated to reach MVP status.
+                                </p>
+                            )}
+                        </div>
 
                         {/* Main Content Tabs */}
                         <Tabs defaultValue="tasks" className="w-full">
@@ -324,16 +325,21 @@ export default function ProjectAnalysis() {
                             <TabsContent value="tasks" className="mt-6">
                                 {tasks.length > 0 ? (
                                     <div className="space-y-6">
-                                        <TaskDependencyGraph 
-                                            tasks={tasks} 
+                                        <TaskDependencyGraph
+                                            tasks={tasks}
                                             projectId={project.id}
                                         />
                                     </div>
                                 ) : (
-                                    <div className="text-center py-12 text-slate-500">
-                                        <ListTodo className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                                        No tasks generated yet
-                                        <p className="mt-2 text-sm">Use the Refactoring tab to generate tasks</p>
+                                    <div className="bg-slate-900/80 backdrop-blur-xl rounded-2xl border border-cyan-500/30 p-12 text-center">
+                                        <ListTodo className="w-12 h-12 mx-auto mb-3 text-cyan-400" />
+                                        <h3 className="text-xl font-semibold mb-2">No Tasks Found</h3>
+                                        <p className="text-slate-400">
+                                            The AI did not generate any actionable tasks, or the analysis is incomplete.
+                                        </p>
+                                        <p className="mt-4 text-sm text-slate-500">
+                                            Use the <strong>Refactoring</strong> tab to define custom goals and generate a new plan.
+                                        </p>
                                     </div>
                                 )}
                             </TabsContent>
@@ -366,9 +372,9 @@ export default function ProjectAnalysis() {
                                         <GitBranch className="w-5 h-5 text-green-400" />
                                         Dependency Graph
                                     </h3>
-                                    <DependencyGraph 
-                                        architecture={project.architecture} 
-                                        detectedStack={project.detected_stack} 
+                                    <DependencyGraph
+                                        architecture={project.architecture}
+                                        detectedStack={project.detected_stack}
                                     />
                                 </div>
                             </TabsContent>
@@ -379,7 +385,7 @@ export default function ProjectAnalysis() {
                                         <Flame className="w-5 h-5 text-orange-400" />
                                         Code Complexity & Hotspots
                                     </h3>
-                                    <ComplexityMetrics 
+                                    <ComplexityMetrics
                                         fileTree={project.file_tree}
                                         codeSmells={project.code_smells}
                                         issues={project.issues}
@@ -400,11 +406,11 @@ export default function ProjectAnalysis() {
                             </TabsContent>
 
                             <TabsContent value="refactor" className="mt-6">
-                                <RefactoringPanel 
+                                <RefactoringPanel
                                     project={project}
-                                    onTasksGenerated={(newTasks, summary) => {
-                                        queryClient.invalidateQueries(['tasks', projectId]);
-                                        queryClient.invalidateQueries(['project', projectId]);
+                                    onTasksGenerated={() => {
+                                        // Invalidate tasks to trigger re-render and task counter update
+                                        // Since we are using Zustand, a simple store update is enough
                                     }}
                                 />
                             </TabsContent>

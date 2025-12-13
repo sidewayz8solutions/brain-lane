@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { authService } from '@/services/authService';
+import { billingService } from '@/services/billingService'; // New import
 
 // Auth Context
 const AuthContext = createContext({
@@ -7,6 +8,12 @@ const AuthContext = createContext({
     session: null,
     isLoading: true,
     isAuthenticated: false,
+    billing: {
+        currentTier: 'free',
+        creditsBalance: 0,
+        isSubscriptionActive: false,
+        limits: billingService.getTierLimits('free'),
+    },
     signIn: async () => {},
     signUp: async () => {},
     signOut: async () => {},
@@ -21,22 +28,57 @@ export function AuthProvider({ children }) {
     const [session, setSession] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [billingStatus, setBillingStatus] = useState({
+        currentTier: 'free',
+        creditsBalance: 0,
+        isSubscriptionActive: false,
+    });
+
+    const fetchBillingStatus = useCallback(async (userId) => {
+        try {
+            const status = await billingService.fetchUserBillingStatus(userId);
+            setBillingStatus(status);
+        } catch (err) {
+            console.error('Failed to fetch billing status:', err);
+            // Default to free tier on failure
+            setBillingStatus({
+                currentTier: 'free',
+                creditsBalance: 0,
+                isSubscriptionActive: false,
+            });
+        }
+    }, []);
 
     // Initialize auth state
     useEffect(() => {
         initializeAuth();
     }, []);
 
+    // Fetch billing status when user or session changes
+    useEffect(() => {
+        if (user) {
+            fetchBillingStatus(user.id);
+        } else {
+            // Reset to default free tier when signed out
+            setBillingStatus({
+                currentTier: 'free',
+                creditsBalance: 0,
+                isSubscriptionActive: false,
+            });
+        }
+    }, [user, fetchBillingStatus]);
+
+
     const initializeAuth = async () => {
         try {
             setIsLoading(true);
-            
+
             // Check for existing session
             const currentSession = await authService.getSession();
-            
+
             if (currentSession) {
                 setSession(currentSession);
-                
+
                 // Fetch user profile
                 const userProfile = await authService.getCurrentUser();
                 setUser(userProfile);
@@ -54,14 +96,16 @@ export function AuthProvider({ children }) {
         try {
             setIsLoading(true);
             setError(null);
-            
+
             const result = await authService.signIn(email, password);
-            
+
             if (result.user) {
                 setUser(result.user);
                 setSession(result.session);
+                // Fetch billing status immediately after successful sign in
+                await fetchBillingStatus(result.user.id);
             }
-            
+
             return result;
         } catch (err) {
             setError(err.message);
@@ -69,16 +113,16 @@ export function AuthProvider({ children }) {
         } finally {
             setIsLoading(false);
         }
-    }, []);
+    }, [fetchBillingStatus]);
 
     // Sign up with email/password
     const signUp = useCallback(async (email, password, metadata = {}) => {
         try {
             setIsLoading(true);
             setError(null);
-            
+
             const result = await authService.signUp(email, password, metadata);
-            
+
             return result;
         } catch (err) {
             setError(err.message);
@@ -93,11 +137,18 @@ export function AuthProvider({ children }) {
         try {
             setIsLoading(true);
             setError(null);
-            
+
             await authService.signOut();
-            
+
             setUser(null);
             setSession(null);
+            // Reset billing status
+            setBillingStatus({
+                currentTier: 'free',
+                creditsBalance: 0,
+                isSubscriptionActive: false,
+            });
+
         } catch (err) {
             setError(err.message);
             throw err;
@@ -110,9 +161,9 @@ export function AuthProvider({ children }) {
     const signInWithProvider = useCallback(async (provider) => {
         try {
             setError(null);
-            
+
             const result = await authService.signInWithProvider(provider);
-            
+
             // OAuth redirects, so we don't need to set state here
             return result;
         } catch (err) {
@@ -125,31 +176,32 @@ export function AuthProvider({ children }) {
     const refreshSession = useCallback(async () => {
         try {
             const newSession = await authService.refreshSession();
-            
+
             if (newSession) {
                 setSession(newSession);
+                await fetchBillingStatus(newSession.user.id);
             }
-            
+
             return newSession;
         } catch (err) {
             console.error('Session refresh error:', err);
             // If refresh fails, sign out
             await signOut();
         }
-    }, [signOut]);
+    }, [signOut, fetchBillingStatus]);
 
     // Update user profile
     const updateProfile = useCallback(async (updates) => {
         try {
             setIsLoading(true);
             setError(null);
-            
+
             const updatedUser = await authService.updateProfile(updates);
-            
+
             if (updatedUser) {
                 setUser(updatedUser);
             }
-            
+
             return updatedUser;
         } catch (err) {
             setError(err.message);
@@ -166,10 +218,10 @@ export function AuthProvider({ children }) {
         const expiresAt = new Date(session.expires_at * 1000);
         const now = new Date();
         const timeUntilExpiry = expiresAt - now;
-        
+
         // Refresh 5 minutes before expiry
         const refreshTime = Math.max(timeUntilExpiry - 5 * 60 * 1000, 0);
-        
+
         const refreshTimer = setTimeout(() => {
             refreshSession();
         }, refreshTime);
@@ -183,6 +235,10 @@ export function AuthProvider({ children }) {
         isLoading,
         isAuthenticated: !!user,
         error,
+        billing: {
+            ...billingStatus,
+            limits: billingService.getTierLimits(billingStatus.currentTier),
+        },
         signIn,
         signUp,
         signOut,
@@ -201,11 +257,11 @@ export function AuthProvider({ children }) {
 // Custom hook to use auth context
 export function useAuth() {
     const context = useContext(AuthContext);
-    
+
     if (!context) {
         throw new Error('useAuth must be used within an AuthProvider');
     }
-    
+
     return context;
 }
 

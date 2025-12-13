@@ -10,17 +10,19 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
+        // --- Core Theme Variants (Cyan/Purple/Slate) ---
         default:
-          "bg-[#461D7C] text-[#FFE566] shadow hover:bg-[#461D7C]/80",
+          "bg-gradient-to-r from-cyan-600 to-purple-600 text-white shadow-lg shadow-cyan-500/30 hover:from-cyan-500 hover:to-purple-500",
         destructive:
-          "bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90",
+          "bg-gradient-to-r from-red-600 to-rose-600 text-white shadow-sm hover:from-red-500 hover:to-rose-500",
         outline:
           "border border-slate-700 bg-slate-800/50 text-slate-300 shadow-sm hover:bg-slate-700/50 hover:text-white",
         secondary:
-          "bg-[#FFE566] text-[#461D7C] shadow-sm hover:bg-[#FFE566]/80",
+          "bg-slate-700 text-white shadow-sm hover:bg-slate-600",
         ghost: "hover:bg-slate-800/50 hover:text-white",
         link: "text-cyan-400 underline-offset-4 hover:underline",
-        // Vibrant color variants matching ProjectHealth
+
+        // --- Custom Color Variants (for context buttons) ---
         cyan: "bg-cyan-600 text-white shadow hover:bg-cyan-500",
         cyanOutline: "border border-cyan-500/30 bg-cyan-500/10 text-cyan-400 shadow-sm hover:bg-cyan-500/20 hover:text-cyan-300",
         purple: "bg-purple-600 text-white shadow hover:bg-purple-500",

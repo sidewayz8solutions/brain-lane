@@ -4,48 +4,51 @@ import { saveProjectFiles, loadProjectFiles } from '@/services/storageService';
 
 const generateId = () => `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
+// Helper to ensure nested objects and arrays are correctly initialized and limited
 const formatDetectedStack = (stack) => {
   if (Array.isArray(stack)) {
-    return stack.slice(0, 20);
+    return stack.slice(0, 20); // Keep old format compatibility for existing data
   }
   if (stack && typeof stack === 'object') {
     return {
-      framework: stack.framework || '',
-      language: stack.language || '',
-      package_manager: stack.package_manager || '',
-      testing_framework: stack.testing_framework || '',
-      database: stack.database || '',
+      framework: String(stack.framework || ''),
+      language: String(stack.language || ''),
+      package_manager: String(stack.package_manager || ''),
+      testing_framework: String(stack.testing_framework || ''),
+      database: String(stack.database || ''),
       additional: Array.isArray(stack.additional)
-        ? stack.additional.slice(0, 10)
-        : stack.additional
-          ? [].concat(stack.additional).slice(0, 10)
-          : [],
+        ? stack.additional.map(String).slice(0, 10)
+        : [],
     };
   }
-  return [];
+  return { additional: [] }; // Return object format for consistency
 };
 
 const sanitizeProjectForStorage = (project) => {
   if (!project) return null;
+
+  // Enforce types and limits for persistence (prevents storage quota issues with large arrays)
   return {
-    id: project.id,
-    name: project.name,
-    created_at: project.created_at,
-    updated_at: project.updated_at,
-    status: project.status,
-    source_type: project.source_type,
-    github_url: project.github_url,
-    zip_file_url: project.zip_file_url,
+    id: String(project.id),
+    name: String(project.name),
+    created_at: String(project.created_at),
+    updated_at: String(project.updated_at),
+    status: String(project.status),
+    source_type: String(project.source_type || 'zip'),
+    github_url: String(project.github_url || ''),
+    zip_file_url: String(project.zip_file_url || ''),
     detected_stack: formatDetectedStack(project.detected_stack),
-    summary: project.summary || '',
+    summary: String(project.summary || ''),
     architecture: project.architecture || null,
+    // Ensure all critical metadata arrays exist and are limited
     security_vulnerabilities: Array.isArray(project.security_vulnerabilities) ? project.security_vulnerabilities.slice(0, 50) : [],
     code_smells: Array.isArray(project.code_smells) ? project.code_smells.slice(0, 100) : [],
     test_suggestions: Array.isArray(project.test_suggestions) ? project.test_suggestions.slice(0, 50) : [],
     issues: Array.isArray(project.issues) ? project.issues.slice(0, 100) : [],
-    analysis_strategy: project.analysis_strategy || null,
+    analysis_strategy: String(project.analysis_strategy || 'none'),
     file_contents_count: Object.keys(project.file_contents || {}).length,
     file_tree_count: Array.isArray(project.file_tree) ? project.file_tree.length : 0,
+    agents_bootstrapped: !!project.agents_bootstrapped, // Ensure boolean for flag
   };
 };
 
@@ -72,7 +75,6 @@ export const useProjectStore = create(
         };
 
         console.log('📝 Creating project:', project.id, project.name);
-        console.log('📂 Files to store:', Object.keys(project.file_contents || {}).length);
 
         const hasLargeData =
           (project.file_contents && Object.keys(project.file_contents).length > 0) ||
@@ -82,7 +84,7 @@ export const useProjectStore = create(
           console.log('💾 Caching files in memory...');
           fileContentsCache.set(project.id, project.file_contents || {});
           fileTreeCache.set(project.id, project.file_tree || []);
-          
+
           console.log('📡 Saving files to Supabase...');
           saveProjectFiles(project.id, {
             fileContents: project.file_contents || {},
@@ -109,32 +111,45 @@ export const useProjectStore = create(
       },
 
       updateProject: (id, updates) => {
+        const existing = get().projects.find((p) => p.id === id) || {};
+        const isCurrent = get().currentProject?.id === id;
+
+        // 1. Handle file updates for cache and persistence
         if (updates.file_contents && Object.keys(updates.file_contents).length > 0) {
           fileContentsCache.set(id, updates.file_contents);
+          if (isCurrent) {
+             get().currentProject.file_contents = updates.file_contents;
+          }
           saveProjectFiles(id, {
             fileContents: updates.file_contents,
-            fileTree: fileTreeCache.get(id) || [],
+            fileTree: updates.file_tree || fileTreeCache.get(id) || [],
           }).catch((err) => console.warn('Failed to save project files:', err));
         }
 
         if (updates.file_tree && updates.file_tree.length > 0) {
           fileTreeCache.set(id, updates.file_tree);
-          saveProjectFiles(id, {
-            fileContents: fileContentsCache.get(id) || {},
-            fileTree: updates.file_tree,
-          }).catch((err) => console.warn('Failed to save project files:', err));
+          if (isCurrent) {
+              get().currentProject.file_tree = updates.file_tree;
+          }
+          if (!updates.file_contents) { // Only save if file contents weren't part of this update
+             saveProjectFiles(id, {
+                fileContents: fileContentsCache.get(id) || {},
+                fileTree: updates.file_tree,
+             }).catch((err) => console.warn('Failed to save project files:', err));
+          }
         }
 
-        const existing = get().projects.find((p) => p.id === id) || {};
+        // 2. Merge and Sanitize metadata for persistence layer
         const merged = { ...existing, ...updates };
         const sanitized = sanitizeProjectForStorage(merged);
 
+        // 3. Update state
         set((state) => ({
           projects: state.projects.map((p) =>
             p.id === id ? { ...sanitized, updated_at: new Date().toISOString() } : p
           ),
           currentProject:
-            state.currentProject?.id === id
+            isCurrent
               ? {
                   ...state.currentProject,
                   ...updates,
@@ -169,7 +184,7 @@ export const useProjectStore = create(
           file_tree: cachedTree || [],
         };
 
-        // Load from Supabase if not in cache
+        // Load from Supabase if not in cache (non-blocking)
         if (!cachedContents || Object.keys(cachedContents).length === 0) {
           loadProjectFiles(id)
             .then(({ fileContents, fileTree }) => {
@@ -211,7 +226,7 @@ export const useProjectStore = create(
         // Check cache first
         let fileContents = fileContentsCache.get(id);
         let fileTree = fileTreeCache.get(id);
-        
+
         console.log('💾 Cache check - fileContents:', fileContents ? Object.keys(fileContents).length : 0, 'files');
 
         // Load from Supabase if not in cache
@@ -242,7 +257,7 @@ export const useProjectStore = create(
           file_contents: fileContents || {},
           file_tree: fileTree || [],
         };
-        
+
         console.log('📦 Returning project with', Object.keys(result.file_contents).length, 'files');
         return result;
       },

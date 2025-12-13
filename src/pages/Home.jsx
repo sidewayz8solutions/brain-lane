@@ -22,6 +22,7 @@ export default function Home() {
     const [analysisModalVisible, setAnalysisModalVisible] = useState(false);
     const [analysisProject, setAnalysisProject] = useState(null);
     const createProject = useProjectStore((state) => state.createProject);
+    const updateProject = useProjectStore((state) => state.updateProject);
 
     const handleUpload = async (data) => {
         console.log('handleUpload called with:', data);
@@ -30,82 +31,71 @@ export default function Home() {
         setAnalysisError(null);
         setAnalysisStatus('uploading');
         setAnalysisModalVisible(true);
-        setAnalysisProject(null);
+        let project = null;
 
         try {
             let fileUrl = null;
             let fileTree = [];
             let fileContents = {};
             let detectedStack = [];
+            let projectName = data.file?.name?.replace('.zip', '') || data.url?.split('/').pop().replace('.git', '') || 'Imported Project';
 
+            // 1. Create a minimal project entry right away (ID generation)
+            project = createProject({
+                name: projectName,
+                source_type: data.type,
+                github_url: data.type === 'github' ? data.url : null,
+                status: 'uploading',
+                // Initialize empty for store persistence
+                file_tree: [],
+                file_contents: {},
+                detected_stack: []
+            });
+            setAnalysisProject(project);
+
+            // 2. Handle ZIP Upload/Extraction
             if (data.type === 'zip' && data.file) {
-                console.log('Processing ZIP file:', data.file.name);
-                
                 // Upload ZIP entries to Supabase Storage (streamed)
-                if (!hasSupabase) {
-                    const diag = getSupabaseDiagnostics();
-                    console.warn('Supabase diagnostics:', diag);
-                    throw new Error(`Supabase is not configured. URL present: ${diag.supabaseUrlPresent}, Key present: ${diag.supabaseAnonKeyPresent}. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.`);
-                }
-                setAnalysisStatus('uploading');
-                const projectName = data.file.name?.replace('.zip', '') || 'Imported Project';
-                // Create project early to attach uploads under its ID
-                const tempProject = createProject({
-                    name: projectName,
-                    source_type: data.type,
-                    zip_file_url: null,
-                    status: 'uploading',
-                    file_tree: [],
-                    file_contents: {},
-                    detected_stack: []
-                });
-                setAnalysisProject(tempProject);
-                try {
-                    const supabaseResult = await UploadZipToSupabase({ file: data.file, projectId: tempProject.id });
-                    console.log('Supabase upload result:', supabaseResult);
-                    if (supabaseResult?.errors?.length) {
-                        console.warn('Supabase upload completed with errors:', supabaseResult.errors.slice(0, 5));
+                if (hasSupabase) {
+                    try {
+                        const supabaseResult = await UploadZipToSupabase({ file: data.file, projectId: project.id });
+                        console.log('Supabase upload result:', supabaseResult);
+                        if (supabaseResult?.errors?.length) {
+                            console.warn('Supabase upload completed with errors:', supabaseResult.errors.slice(0, 5));
+                        }
+                        fileUrl = `supabase://${supabaseResult.bucket}/${project.id}`;
+                    } catch (supabaseErr) {
+                        console.error('Supabase upload failed, continuing with local analysis only:', supabaseErr.message);
+                        // Do not block analysis just because remote storage failed
                     }
-                    fileUrl = `supabase://${supabaseResult.bucket}/${tempProject.id}`;
-                } catch (supabaseErr) {
-                    console.error('Supabase upload failed, continuing with local analysis only:', supabaseErr);
-                    // Do not block analysis just because remote storage failed
+                } else {
+                    console.warn('Supabase not available. Local file persistence will be used.');
                 }
 
                 // Extract and analyze contents
                 const extracted = await ExtractZipContents(data.file);
-                console.log('Extracted contents:', { 
-                    fileTreeLength: extracted.fileTree?.length,
-                    fileContentsKeys: Object.keys(extracted.fileContents || {}).length 
-                });
                 fileTree = extracted.fileTree || [];
                 fileContents = extracted.fileContents || {};
 
                 const analysis = AnalyzeProjectStructure(fileTree, fileContents);
-                console.log('Analysis result:', analysis);
                 detectedStack = analysis.detected_stack || [];
-            } else if (data.type === 'github' && data.url) {
-                console.log('Processing GitHub URL:', data.url);
-                fileTree = [];
-                fileContents = {};
-                detectedStack = [];
+
+                // 3. Update project with full file structure and detected stack
+                updateProject(project.id, {
+                    zip_file_url: fileUrl,
+                    file_tree: fileTree,
+                    file_contents: fileContents,
+                    detected_stack: detectedStack,
+                    status: 'analyzing',
+                });
+
+                // Update local state with the latest project data
+                project = { ...project, file_contents: fileContents, file_tree: fileTree, detected_stack: detectedStack, status: 'analyzing' };
+                setAnalysisProject(project);
             }
 
-            // Update the existing project with extracted tree/contents and status
-            const project = createProject({
-                name: analysisProject?.name || data.file?.name?.replace('.zip', '') || data.url?.split('/').pop() || 'Imported Project',
-                source_type: data.type,
-                github_url: data.type === 'github' ? data.url : null,
-                zip_file_url: fileUrl,
-                status: 'analyzing',
-                file_tree: fileTree,
-                file_contents: fileContents,
-                detected_stack: detectedStack
-            });
-            console.log('Created/updated project:', project);
-            setAnalysisProject(project);
-
-            if (data.type === 'zip') {
+            // 4. Run AI Analysis
+            if (project?.id) {
                 setAnalysisStatus('analyzing');
                 try {
                     const analyzedProject = await runProjectAnalysis(project.id);
@@ -114,20 +104,25 @@ export default function Home() {
                 } catch (analysisErr) {
                     console.error('Analysis failed in Home:', analysisErr);
                     setAnalysisStatus('error');
-                    setAnalysisError(analysisErr.message || 'Analysis failed');
+                    setAnalysisError(analysisErr.message || 'AI analysis failed. Check console for details.');
+                    // Re-throw to hit the outer catch and finalize status
                     throw analysisErr;
                 }
             } else {
-                console.warn('GitHub analysis is not automatic yet. View project for manual analysis.');
-                setAnalysisStatus('ready');
+                // This path should ideally not be hit with a ZIP upload
+                setAnalysisStatus('error');
+                setAnalysisError('Could not create project ID.');
             }
 
         } catch (error) {
-            console.error('Upload error:', error);
-            const message = error.message || 'Failed to process file. Please try again.';
+            console.error('Final upload/analysis error catch:', error);
+            const message = error.message || 'Failed to process project. Please check if it is a valid ZIP/GitHub repo.';
             setUploadError(message);
             setAnalysisError(message);
             setAnalysisStatus('error');
+            if (project?.id) {
+                updateProject(project.id, { status: 'error', error_message: message.substring(0, 500) });
+            }
         } finally {
             setIsUploading(false);
         }
@@ -158,7 +153,7 @@ export default function Home() {
         { icon: CheckCircle, title: 'One-Click Apply', desc: 'Download patches or export modified code', color: 'gold' },
     ];
 
-    // Bright Silver Chrome color classes
+    // Bright Silver Chrome color classes - kept for consistency
     const colorClasses = {
         purple: {
             bg: 'from-slate-200/20 to-white/10',
@@ -228,23 +223,23 @@ export default function Home() {
                         </div>
                         <span className="font-bold text-[#FFE566] text-lg">Brain Lane</span>
                     </Link>
-                    
+
                     <div className="flex items-center gap-1">
-                        <Link 
+                        <Link
                             to={createPageUrl('Home')}
                             className="px-4 py-2 rounded-lg text-sm text-[#FFE566] hover:bg-[#FFE566]/10 transition-colors flex items-center gap-2"
                         >
                             <HomeIcon className="w-4 h-4" />
                             Home
                         </Link>
-                        <Link 
+                        <Link
                             to={createPageUrl('Projects')}
                             className="px-4 py-2 rounded-lg text-sm text-slate-400 hover:text-[#FFE566] hover:bg-[#FFE566]/10 transition-colors flex items-center gap-2"
                         >
                             <FolderGit2 className="w-4 h-4" />
                             Projects
                         </Link>
-                        <Link 
+                        <Link
                             to={createPageUrl('ProjectHealth')}
                             className="px-4 py-2 rounded-lg text-sm text-slate-400 hover:text-[#FFE566] hover:bg-[#FFE566]/10 transition-colors flex items-center gap-2"
                         >
@@ -287,9 +282,9 @@ export default function Home() {
                     <motion.div
                         className="absolute bottom-1/4 left-1/4 w-[320px] h-[320px] rounded-full blur-[80px] metallic-gold-bg opacity-35"
                         style={{ filter: 'blur(80px)' }}
-                        animate={{ 
+                        animate={{
                             x: [0, 40, 0],
-                            scale: [1, 1.12, 1] 
+                            scale: [1, 1.12, 1]
                         }}
                         transition={{ duration: 14, repeat: Infinity, ease: "easeInOut" }}
                     />
@@ -308,7 +303,7 @@ export default function Home() {
                             {/* Glowing Frame */}
                             <div className="absolute -inset-4 rounded-3xl bg-gradient-to-r from-[#FFE566] via-[#FFC947] to-[#461D7C] opacity-75 blur-xl animate-pulse" />
                             <div className="absolute -inset-2 rounded-2xl bg-gradient-to-r from-[#FFE566] via-[#FFC947] to-[#461D7C] opacity-90" />
-                            
+
                             {/* Logo Container */}
                             <div className="relative bg-slate-950 rounded-2xl p-4">
                                 <img
@@ -384,7 +379,7 @@ export default function Home() {
                     >
                         <div className="relative">
                             {/* Glow effect behind card - Silver Chrome */}
-                            <motion.div 
+                            <motion.div
                                 className="absolute -inset-2 rounded-[2rem] blur-2xl opacity-40"
                                 style={{
                                     background: 'linear-gradient(135deg, rgba(226,232,240,0.6) 0%, rgba(255,255,255,0.4) 50%, rgba(148,163,184,0.5) 100%)'
@@ -399,7 +394,7 @@ export default function Home() {
                                 }}
                             />
 
-                            <div 
+                            <div
                                 className="relative backdrop-blur-2xl rounded-3xl border border-slate-300/40 p-8 shadow-2xl"
                                 style={{
                                     background: 'linear-gradient(145deg, rgba(226,232,240,0.12) 0%, rgba(255,255,255,0.06) 50%, rgba(148,163,184,0.1) 100%)',
@@ -425,9 +420,9 @@ export default function Home() {
                                     >
                                         <Sparkles className="w-5 h-5 text-purple-400" style={{ filter: 'drop-shadow(0 0 8px rgba(168, 85, 247, 0.8))' }} />
                                     </motion.div>
-                                    <span 
+                                    <span
                                         className="text-purple-300 font-medium"
-                                        style={{ 
+                                        style={{
                                             textShadow: '0 0 10px rgba(168, 85, 247, 0.8), 0 0 20px rgba(168, 85, 247, 0.6), 0 0 30px rgba(168, 85, 247, 0.4)'
                                         }}
                                     >
@@ -576,7 +571,7 @@ export default function Home() {
             <Footer />
 
             {analysisModalVisible && (
-                <motion.div 
+                <motion.div
                     className="fixed inset-0 z-[100] bg-slate-950/80 backdrop-blur-2xl flex items-center justify-center px-6"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
