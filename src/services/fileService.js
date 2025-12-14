@@ -147,21 +147,43 @@ export const UploadZipToSupabase = async ({ file, projectId, bucket = (import.me
     'Gradle/',
   ];
 
+	  // Skip binary/image assets when uploading extracted ZIP contents
+	  // We only need source/config/docs files in Supabase for analysis
+	  const imageExtensions = [
+	    '.png',
+	    '.jpg',
+	    '.jpeg',
+	    '.gif',
+	    '.svg',
+	    '.webp',
+	    '.ico',
+	    '.bmp',
+	    '.tif',
+	    '.tiff',
+	  ];
+
   // Hard cap on number of files we will attempt to upload
   const MAX_UPLOAD_FILES = 2000;
   let uploadCount = 0;
 
-  for (const entry of entries) {
-    const path = entry.filename;
+	  for (const entry of entries) {
+	    const path = entry.filename;
+	    const lowerPath = path.toLowerCase();
     const isDir = entry.directory === true;
     if (isDir) continue; // storage only for files
-    if (path.startsWith('__MACOSX') || path.startsWith('.')) continue;
+	    if (path.startsWith('__MACOSX') || path.startsWith('.')) continue;
 
-    // Skip node_modules and other heavy / build folders
-    if (skipFolders.some(folder => path.includes(folder))) {
+	    // Skip node_modules and other heavy / build folders
+	    if (skipFolders.some(folder => path.includes(folder))) {
       skipped.push(path);
       continue;
     }
+
+	    // Skip image and other binary asset files – they are not needed for analysis
+	    if (imageExtensions.some(ext => lowerPath.endsWith(ext))) {
+	      skipped.push(path);
+	      continue;
+	    }
 
     // Enforce a hard cap on number of files to upload to avoid hangs
     if (uploadCount >= MAX_UPLOAD_FILES) {
