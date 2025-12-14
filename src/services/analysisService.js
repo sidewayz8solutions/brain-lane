@@ -92,12 +92,17 @@ Never return an empty tasks array. If you are unsure, infer the most likely task
 Be specific, actionable, and reference exact files/functions when possible.`;
 };
 
+// OpenAI strict JSON schema - requires additionalProperties: false and required arrays
 const responseSchema = {
   type: 'object',
+  additionalProperties: false,
+  required: ['summary', 'detected_stack', 'architecture', 'security_vulnerabilities', 'code_smells', 'issues', 'test_suggestions', 'tasks'],
   properties: {
     summary: { type: 'string' },
     detected_stack: {
       type: 'object',
+      additionalProperties: false,
+      required: ['framework', 'language'],
       properties: {
         framework: { type: 'string' },
         language: { type: 'string' },
@@ -109,12 +114,16 @@ const responseSchema = {
     },
     architecture: {
       type: 'object',
+      additionalProperties: false,
+      required: ['pattern', 'components'],
       properties: {
         pattern: { type: 'string' },
         components: {
           type: 'array',
           items: {
             type: 'object',
+            additionalProperties: false,
+            required: ['name', 'responsibility'],
             properties: {
               name: { type: 'string' },
               responsibility: { type: 'string' },
@@ -130,12 +139,14 @@ const responseSchema = {
       type: 'array',
       items: {
         type: 'object',
+        additionalProperties: false,
+        required: ['title', 'severity', 'description'],
         properties: {
           cwe_id: { type: 'string' },
           title: { type: 'string' },
           severity: { type: 'string', enum: ['critical', 'high', 'medium', 'low'] },
           file: { type: 'string' },
-          line: { type: 'number' },
+          line: { type: 'integer' },
           description: { type: 'string' },
           recommendation: { type: 'string' },
         },
@@ -145,6 +156,8 @@ const responseSchema = {
       type: 'array',
       items: {
         type: 'object',
+        additionalProperties: false,
+        required: ['type', 'severity', 'description'],
         properties: {
           type: { type: 'string' },
           severity: { type: 'string', enum: ['critical', 'high', 'medium', 'low'] },
@@ -158,11 +171,13 @@ const responseSchema = {
       type: 'array',
       items: {
         type: 'object',
+        additionalProperties: false,
+        required: ['type', 'severity', 'description'],
         properties: {
           type: { type: 'string' },
           severity: { type: 'string', enum: ['critical', 'high', 'medium', 'low'] },
           file: { type: 'string' },
-          line: { type: 'number' },
+          line: { type: 'integer' },
           description: { type: 'string' },
         },
       },
@@ -171,6 +186,8 @@ const responseSchema = {
       type: 'array',
       items: {
         type: 'object',
+        additionalProperties: false,
+        required: ['target_file', 'description'],
         properties: {
           target_file: { type: 'string' },
           function_name: { type: 'string' },
@@ -184,6 +201,8 @@ const responseSchema = {
       type: 'array',
       items: {
         type: 'object',
+        additionalProperties: false,
+        required: ['title', 'description', 'category', 'priority'],
         properties: {
           title: { type: 'string' },
           description: { type: 'string' },

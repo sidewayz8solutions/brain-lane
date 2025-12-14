@@ -147,22 +147,33 @@ export const InvokeLLM = async ({ prompt, response_json_schema, add_context_from
   try {
     console.log('🚀 Making real OpenAI API call...');
     console.log('📦 Prompt length:', prompt.length, 'chars');
-    
-    // For very large prompts, avoid response_format to reduce latency
-    const isLargePrompt = prompt.length > 8000;
+
+    // Build response_format based on whether we have a schema
+    let responseFormat = undefined;
+    if (response_json_schema) {
+      // Use strict JSON schema to guarantee valid JSON output
+      responseFormat = {
+        type: 'json_schema',
+        json_schema: {
+          name: 'analysis_response',
+          strict: true,
+          schema: response_json_schema
+        }
+      };
+    }
 
     const requestBody = {
       model: AI_CONFIG.model,
       messages: [
-        { 
-          role: 'system', 
-          content: 'You are a senior software architect. Always respond with valid JSON matching the requested schema exactly. Analyze the actual code provided - do not use placeholder or example data. Be specific about the files and issues you find.' 
+        {
+          role: 'system',
+          content: 'You are a senior software architect. Return ONLY valid JSON matching the provided schema. Analyze the actual code provided - do not use placeholder data. Be specific about files and issues.'
         },
         { role: 'user', content: prompt }
       ],
-      response_format: (!isLargePrompt && response_json_schema) ? { type: 'json_object' } : undefined,
-      max_tokens: 4000, // Increased to avoid truncation on complex analyses
-      temperature: 0.2, // Lower temperature for more consistent structured output
+      response_format: responseFormat,
+      max_tokens: 4000,
+      temperature: 0, // Zero temperature for deterministic structured output
     };
     
     // Use proxy endpoint when deployed (avoids CORS), direct API when local
@@ -333,10 +344,12 @@ export const AnalyzeCode = async (code, language = 'javascript') => {
     prompt: `Analyze this ${language} code and provide feedback:\n\n${code}`,
     response_json_schema: {
       type: 'object',
+      additionalProperties: false,
+      required: ['quality_score', 'issues', 'suggestions'],
       properties: {
         quality_score: { type: 'number' },
-        issues: { type: 'array' },
-        suggestions: { type: 'array' }
+        issues: { type: 'array', items: { type: 'string' } },
+        suggestions: { type: 'array', items: { type: 'string' } }
       }
     }
   });
@@ -344,14 +357,18 @@ export const AnalyzeCode = async (code, language = 'javascript') => {
 
 export const GenerateTasks = async (projectAnalysis) => {
   return InvokeLLM({
-    prompt: `You are a senior tech lead. Based on this project analysis, generate a concrete implementation task plan to bring the project to completion.\n\nSTRICT REQUIREMENTS:\n- Return ONLY a JSON object that matches the provided JSON schema.\n- Populate the tasks array with AT LEAST 15 tasks.\n- Each task MUST include: title, description, category, type, priority, estimated_effort, files_affected.\n- category must be one of: feature, bugfix, refactor, test, documentation, security, infra.\n- type must be one of: refactor, test, bugfix, feature, infra.\n- Include at least 5 refactor tasks, 3 test tasks, and 2 infra or documentation tasks.\n\nPROJECT ANALYSIS:\n${JSON.stringify(projectAnalysis)}`,
+    prompt: `You are a senior tech lead. Based on this project analysis, generate a concrete implementation task plan.\n\nGenerate 15-25 specific, actionable tasks covering:\n- Security fixes (highest priority)\n- Bug fixes\n- Refactoring improvements\n- Test coverage\n- Infrastructure/DevOps\n- Documentation\n\nPROJECT ANALYSIS:\n${JSON.stringify(projectAnalysis)}`,
     response_json_schema: {
       type: 'object',
+      additionalProperties: false,
+      required: ['tasks'],
       properties: {
         tasks: {
           type: 'array',
           items: {
             type: 'object',
+            additionalProperties: false,
+            required: ['title', 'description', 'category', 'priority'],
             properties: {
               title: { type: 'string' },
               description: { type: 'string' },
