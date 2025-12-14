@@ -1,24 +1,50 @@
 /**
- * Brain Lane — Multi-Agent Orchestration System
- * ==============================================
- * Specialized AI agents that collaborate on complex tasks:
- * 
- * 🔍 Code Auditor — Security, performance, best practices
- * 🔧 Syntax Fixer — Auto-repair broken code
- * ✨ Feature Completer — Implement missing functionality
- * 🎨 UI Designer — Generate UI components and styling
- * 🚀 Deployment Architect — Infrastructure and DevOps
- * 📝 Documentation Writer — Generate docs and comments
+ * Brain Lane — Multi-Agent Orchestration System v2
+ * =================================================
+ * AI-assisted engineering platform with specialized agents:
+ *
+ * 🏗️ Architect — System design & architecture analysis
+ * 🔍 Gap Analyzer — Identifies missing components to reach goals
+ * 📋 Task Planner — Converts backlog into executable plans
+ * ⚙️ Implementer — Produces reviewable ChangeSets
+ * 🧪 Test & QA — Proposes tests for validation
+ * 🚀 DevOps — Deployment & infrastructure
+ * 📊 Run Log Interpreter — Analyzes build/test logs
+ *
+ * Legacy agents (backwards compatibility):
+ * 🔍 Code Auditor, 🔧 Syntax Fixer, ✨ Feature Completer, etc.
  */
 
 import { aiEngine } from './aiEngine';
 import { jobQueue, JOB_TYPES } from './jobQueue';
+import {
+  AgentType as NewAgentType,
+  AGENT_DEFINITIONS as NEW_AGENT_DEFINITIONS,
+  GLOBAL_SYSTEM_PROMPT,
+  USER_PROMPTS,
+  RESPONSE_SCHEMAS,
+  buildUserPrompt,
+  getAgentDefinition,
+} from './agentPrompts';
 
 // ============================================================================
-// AGENT DEFINITIONS
+// AGENT TYPES (Combined legacy + new)
 // ============================================================================
 
+// Re-export new agent types
+export { NewAgentType as PrimaryAgentType };
+
+// Legacy agent types (for backwards compatibility)
 export const AgentType = {
+  // New primary agents from spec
+  ARCHITECT: 'architect',
+  GAP_ANALYZER: 'gap_analyzer',
+  TASK_PLANNER: 'task_planner',
+  IMPLEMENTER: 'implementer',
+  TEST_QA: 'test_qa',
+  DEVOPS: 'devops',
+  RUN_LOG_INTERPRETER: 'run_log_interpreter',
+  // Legacy agents (preserved for backwards compatibility)
   CODE_AUDITOR: 'code_auditor',
   SYNTAX_FIXER: 'syntax_fixer',
   FEATURE_COMPLETER: 'feature_completer',
@@ -36,14 +62,20 @@ export const AgentStatus = {
   WAITING: 'waiting',
 };
 
-const AGENT_DEFINITIONS = {
+// ============================================================================
+// LEGACY AGENT DEFINITIONS (for backwards compatibility)
+// ============================================================================
+
+const LEGACY_AGENT_DEFINITIONS = {
   [AgentType.CODE_AUDITOR]: {
     name: 'Code Auditor',
     emoji: '🔍',
     description: 'Analyzes code for security vulnerabilities, performance issues, and best practice violations',
     capabilities: ['security_audit', 'performance_review', 'best_practices', 'dependency_check'],
     model: 'gpt-4o',
-    systemPrompt: `You are an expert code auditor. Your job is to:
+    systemPrompt: `${GLOBAL_SYSTEM_PROMPT}
+
+You are an expert code auditor. Your job is to:
 1. Identify security vulnerabilities (XSS, SQL injection, secrets exposure, etc.)
 2. Find performance bottlenecks and inefficiencies
 3. Check for best practice violations
@@ -59,7 +91,9 @@ Always be specific about line numbers and provide actionable fixes.`,
     description: 'Automatically repairs broken syntax, malformed code, and common errors',
     capabilities: ['syntax_repair', 'import_fix', 'bracket_matching', 'type_correction'],
     model: 'gpt-4o-mini',
-    systemPrompt: `You are a syntax repair specialist. Your job is to:
+    systemPrompt: `${GLOBAL_SYSTEM_PROMPT}
+
+You are a syntax repair specialist. Your job is to:
 1. Fix malformed JavaScript/TypeScript/JSX syntax
 2. Repair broken imports and exports
 3. Fix bracket/parenthesis matching issues
@@ -75,7 +109,9 @@ Output the complete fixed code, preserving the original intent.`,
     description: 'Implements missing functionality, completes stub functions, and adds requested features',
     capabilities: ['implement_function', 'complete_stub', 'add_feature', 'integrate_api'],
     model: 'gpt-4o',
-    systemPrompt: `You are a feature implementation expert. Your job is to:
+    systemPrompt: `${GLOBAL_SYSTEM_PROMPT}
+
+You are a feature implementation expert. Your job is to:
 1. Complete stub functions with full implementations
 2. Add missing CRUD operations
 3. Implement API integrations
@@ -91,7 +127,9 @@ Generate production-ready code with proper error handling.`,
     description: 'Generates UI components, layouts, and styling using modern frameworks',
     capabilities: ['generate_component', 'create_layout', 'add_styling', 'accessibility'],
     model: 'gpt-4o',
-    systemPrompt: `You are a UI/UX implementation expert. Your job is to:
+    systemPrompt: `${GLOBAL_SYSTEM_PROMPT}
+
+You are a UI/UX implementation expert. Your job is to:
 1. Generate React components with proper structure
 2. Create responsive layouts using Tailwind CSS
 3. Add animations with Framer Motion
@@ -107,7 +145,9 @@ Generate beautiful, accessible, responsive components.`,
     description: 'Creates deployment configurations, CI/CD pipelines, and infrastructure code',
     capabilities: ['docker_config', 'ci_cd', 'cloud_deploy', 'env_setup'],
     model: 'gpt-4o',
-    systemPrompt: `You are a DevOps and deployment expert. Your job is to:
+    systemPrompt: `${GLOBAL_SYSTEM_PROMPT}
+
+You are a DevOps and deployment expert. Your job is to:
 1. Generate Dockerfiles and docker-compose configs
 2. Create CI/CD workflows (GitHub Actions, GitLab CI)
 3. Set up cloud deployment (Vercel, AWS, GCP)
@@ -123,7 +163,9 @@ Generate production-ready deployment configurations.`,
     description: 'Generates documentation, README files, API docs, and code comments',
     capabilities: ['readme', 'api_docs', 'jsdoc', 'changelog'],
     model: 'gpt-4o-mini',
-    systemPrompt: `You are a technical documentation expert. Your job is to:
+    systemPrompt: `${GLOBAL_SYSTEM_PROMPT}
+
+You are a technical documentation expert. Your job is to:
 1. Write comprehensive README files
 2. Generate API documentation with examples
 3. Add JSDoc/TSDoc comments to functions
@@ -139,7 +181,9 @@ Write clear, concise, helpful documentation.`,
     description: 'Creates unit tests, integration tests, and test scenarios',
     capabilities: ['unit_tests', 'integration_tests', 'e2e_tests', 'test_coverage'],
     model: 'gpt-4o',
-    systemPrompt: `You are a test engineering expert. Your job is to:
+    systemPrompt: `${GLOBAL_SYSTEM_PROMPT}
+
+You are a test engineering expert. Your job is to:
 1. Write comprehensive unit tests
 2. Create integration tests for APIs
 3. Generate E2E test scenarios
@@ -150,8 +194,14 @@ Generate thorough, maintainable test suites.`,
   },
 };
 
+// Merge new and legacy definitions
+const AGENT_DEFINITIONS = {
+  ...NEW_AGENT_DEFINITIONS,
+  ...LEGACY_AGENT_DEFINITIONS,
+};
+
 // ============================================================================
-// AGENT CLASS
+// AGENT CLASS (Enhanced with new prompt system)
 // ============================================================================
 
 class Agent {
@@ -168,6 +218,64 @@ class Agent {
     };
   }
 
+  /**
+   * Execute agent with structured context (new API)
+   * @param {Object} context - Structured context for the agent
+   */
+  async executeWithContext(context) {
+    this.status = AgentStatus.WORKING;
+    this.currentTask = context;
+    const startTime = Date.now();
+
+    try {
+      // Use new prompt builder if available
+      let prompt;
+      if (USER_PROMPTS[this.type]) {
+        prompt = buildUserPrompt(this.type, context);
+      } else {
+        prompt = this._buildPrompt(context);
+      }
+
+      const response = await aiEngine.invoke({
+        prompt,
+        systemPrompt: this.definition.systemPrompt,
+        type: 'agent',
+        model: this.definition.model,
+        temperature: this.definition.temperature || 0.3,
+        maxTokens: this.definition.maxTokens || 4000,
+        responseSchema: RESPONSE_SCHEMAS[this.type],
+      });
+
+      const elapsed = Date.now() - startTime;
+      this.stats.tasksCompleted++;
+      this.stats.totalTokens += response.tokensUsed || 0;
+      this.stats.avgResponseTime =
+        (this.stats.avgResponseTime * (this.stats.tasksCompleted - 1) + elapsed) / this.stats.tasksCompleted;
+
+      const result = this._parseResponse(response.text || response, context);
+
+      this.history.push({
+        context,
+        result,
+        timestamp: new Date().toISOString(),
+        elapsed,
+        tokensUsed: response.tokensUsed || 0,
+      });
+
+      this.status = AgentStatus.COMPLETED;
+      this.currentTask = null;
+
+      return result;
+    } catch (error) {
+      this.status = AgentStatus.FAILED;
+      this.currentTask = null;
+      throw error;
+    }
+  }
+
+  /**
+   * Legacy execute method (backwards compatible)
+   */
   async execute(task) {
     this.status = AgentStatus.WORKING;
     this.currentTask = task;
@@ -179,16 +287,17 @@ class Agent {
         systemPrompt: this.definition.systemPrompt,
         type: 'agent',
         model: this.definition.model,
-        temperature: 0.3,
+        temperature: this.definition.temperature || 0.3,
       });
 
       const elapsed = Date.now() - startTime;
       this.stats.tasksCompleted++;
       this.stats.totalTokens += response.tokensUsed || 0;
-      this.stats.avgResponseTime = (this.stats.avgResponseTime * (this.stats.tasksCompleted - 1) + elapsed) / this.stats.tasksCompleted;
+      this.stats.avgResponseTime =
+        (this.stats.avgResponseTime * (this.stats.tasksCompleted - 1) + elapsed) / this.stats.tasksCompleted;
 
       const result = this._parseResponse(response.text, task);
-      
+
       this.history.push({
         task,
         result,
@@ -208,10 +317,10 @@ class Agent {
   }
 
   _buildPrompt(task) {
-    return `Task: ${task.description}
+    return `Task: ${task.description || task.goal || 'Analyze and process'}
 
 Context:
-${task.context || 'No additional context provided.'}
+${task.context || task.indexSummary || 'No additional context provided.'}
 
 Files:
 ${task.files?.map(f => `--- ${f.path} ---\n${f.content}`).join('\n\n') || 'No files provided.'}
@@ -223,12 +332,31 @@ Please provide your analysis and/or code changes.`;
   }
 
   _parseResponse(text, task) {
+    // Handle both string and object responses
+    if (typeof text === 'object') {
+      return {
+        success: true,
+        agent: this.type,
+        agentName: this.definition.name,
+        emoji: this.definition.emoji,
+        structured: text,
+        raw: JSON.stringify(text, null, 2),
+      };
+    }
+
     // Try to extract code blocks and analysis
     const codeBlockRegex = /```(?:\w+)?\n([\s\S]*?)```/g;
     const codeBlocks = [];
     let match;
     while ((match = codeBlockRegex.exec(text)) !== null) {
       codeBlocks.push(match[1].trim());
+    }
+
+    // Extract unified diffs
+    const diffs = [];
+    const diffRegex = /```diff\n([\s\S]*?)```/g;
+    while ((match = diffRegex.exec(text)) !== null) {
+      diffs.push(match[1].trim());
     }
 
     // Extract file changes if formatted
@@ -245,8 +373,10 @@ Please provide your analysis and/or code changes.`;
       success: true,
       agent: this.type,
       agentName: this.definition.name,
+      emoji: this.definition.emoji,
       analysis: text.replace(codeBlockRegex, '').trim(),
       codeBlocks,
+      diffs,
       fileChanges,
       raw: text,
     };
@@ -260,6 +390,14 @@ Please provide your analysis and/or code changes.`;
       currentTask: this.currentTask,
       stats: this.stats,
     };
+  }
+
+  getHistory() {
+    return this.history;
+  }
+
+  clearHistory() {
+    this.history = [];
   }
 }
 
@@ -457,13 +595,244 @@ Respond with a JSON array of agent types to use in order, e.g.:
       isRunning: this.isRunning,
     };
   }
+
+  // ==========================================================================
+  // NEW SPEC-ALIGNED WORKFLOWS
+  // ==========================================================================
+
+  /**
+   * Run the full Brain Lane analysis workflow
+   * Architect → Gap Analyzer → Task Planner
+   */
+  async runAnalysisWorkflow(projectIndex, goal, options = {}) {
+    const { onProgress = () => {} } = options;
+    const results = {};
+
+    try {
+      // Step 1: Architect Agent
+      onProgress({ step: 1, total: 3, agent: 'architect', status: 'running' });
+      const architectResult = await this.agents[AgentType.ARCHITECT].executeWithContext({
+        stackSummary: this._formatStackSummary(projectIndex),
+        entrypoints: projectIndex.entry_points || [],
+        depsHighlights: this._formatDependencies(projectIndex.dependencies),
+        userDescription: goal.description,
+        keyFilesExcerpts: projectIndex.module_summaries?.slice(0, 5) || [],
+        constraints: goal.constraints,
+      });
+      results.architect = architectResult;
+      onProgress({ step: 1, total: 3, agent: 'architect', status: 'completed', result: architectResult });
+
+      // Step 2: Gap Analyzer
+      onProgress({ step: 2, total: 3, agent: 'gap_analyzer', status: 'running' });
+      const gapResult = await this.agents[AgentType.GAP_ANALYZER].executeWithContext({
+        goal: goal.title,
+        indexSummary: results.architect?.analysis || this._formatIndexSummary(projectIndex),
+        todoHotspots: projectIndex.todo_fixme_locations || [],
+        configSignals: this._detectMissingConfigs(projectIndex),
+        runLogsExcerpt: options.runLogs || null,
+      });
+      results.gapAnalyzer = gapResult;
+      onProgress({ step: 2, total: 3, agent: 'gap_analyzer', status: 'completed', result: gapResult });
+
+      // Step 3: Task Planner
+      onProgress({ step: 3, total: 3, agent: 'task_planner', status: 'running' });
+      const planResult = await this.agents[AgentType.TASK_PLANNER].executeWithContext({
+        backlog: gapResult?.structured?.backlog || gapResult?.analysis,
+        constraints: goal.constraints,
+        strategy: goal.risk_tolerance || 'balanced',
+      });
+      results.taskPlanner = planResult;
+      onProgress({ step: 3, total: 3, agent: 'task_planner', status: 'completed', result: planResult });
+
+      return {
+        success: true,
+        results,
+        plan: planResult,
+        timestamp: new Date().toISOString(),
+      };
+    } catch (error) {
+      return {
+        success: false,
+        results,
+        error: error.message,
+        timestamp: new Date().toISOString(),
+      };
+    }
+  }
+
+  /**
+   * Run implementation workflow for a single task
+   * Implementer → Test/QA
+   */
+  async runImplementationWorkflow(task, fileExcerpts, options = {}) {
+    const { onProgress = () => {}, skipTests = false } = options;
+    const results = {};
+
+    try {
+      // Step 1: Implementer
+      onProgress({ step: 1, total: skipTests ? 1 : 2, agent: 'implementer', status: 'running' });
+      const implementResult = await this.agents[AgentType.IMPLEMENTER].executeWithContext({
+        task,
+        fileExcerpts,
+        constraints: options.constraints,
+        codingStandards: options.codingStandards,
+      });
+      results.implementer = implementResult;
+      onProgress({ step: 1, total: skipTests ? 1 : 2, agent: 'implementer', status: 'completed', result: implementResult });
+
+      // Step 2: Test/QA (optional)
+      if (!skipTests) {
+        onProgress({ step: 2, total: 2, agent: 'test_qa', status: 'running' });
+        const testResult = await this.agents[AgentType.TEST_QA].executeWithContext({
+          stackSummary: options.stackSummary || 'Unknown',
+          testsSummary: options.existingTests || 'None',
+          changedAreas: implementResult?.fileChanges?.map(f => f.path) || [],
+          goal: task.objective || task.title,
+        });
+        results.testQa = testResult;
+        onProgress({ step: 2, total: 2, agent: 'test_qa', status: 'completed', result: testResult });
+      }
+
+      return {
+        success: true,
+        results,
+        changeset: implementResult?.fileChanges || [],
+        diffs: implementResult?.diffs || [],
+        timestamp: new Date().toISOString(),
+      };
+    } catch (error) {
+      return {
+        success: false,
+        results,
+        error: error.message,
+        timestamp: new Date().toISOString(),
+      };
+    }
+  }
+
+  /**
+   * Run deployment preparation workflow
+   */
+  async runDeploymentWorkflow(projectIndex, targetPlatform, options = {}) {
+    const { onProgress = () => {} } = options;
+
+    onProgress({ step: 1, total: 1, agent: 'devops', status: 'running' });
+    const result = await this.agents[AgentType.DEVOPS].executeWithContext({
+      targetPlatform,
+      configSignals: this._detectConfigPresence(projectIndex),
+      entrypoints: projectIndex.entry_points?.map(e => e.path || e) || [],
+      envKeysDetected: this._extractEnvKeys(projectIndex),
+    });
+    onProgress({ step: 1, total: 1, agent: 'devops', status: 'completed', result });
+
+    return {
+      success: true,
+      result,
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  /**
+   * Analyze run logs and propose fixes
+   */
+  async analyzeRunLogs(command, exitCode, logExcerpt, indexSummary) {
+    return await this.agents[AgentType.RUN_LOG_INTERPRETER].executeWithContext({
+      command,
+      exitCode,
+      logExcerpt,
+      indexSummary,
+    });
+  }
+
+  // ==========================================================================
+  // HELPER METHODS
+  // ==========================================================================
+
+  _formatStackSummary(index) {
+    if (!index) return 'Unknown stack';
+    const parts = [];
+    if (index.languages) {
+      const langs = Object.keys(index.languages);
+      if (langs.length > 0) parts.push(`Languages: ${langs.join(', ')}`);
+    }
+    if (index.frameworks?.length > 0) {
+      parts.push(`Frameworks: ${index.frameworks.map(f => f.name || f).join(', ')}`);
+    }
+    if (index.package_managers?.length > 0) {
+      parts.push(`Package managers: ${index.package_managers.map(p => p.type || p).join(', ')}`);
+    }
+    return parts.join('\n') || 'Unknown stack';
+  }
+
+  _formatDependencies(deps) {
+    if (!deps) return 'No dependency info';
+    const parts = [];
+    if (deps.external?.length > 0) {
+      parts.push(`External: ${deps.external.slice(0, 10).join(', ')}${deps.external.length > 10 ? '...' : ''}`);
+    }
+    if (deps.missing?.length > 0) {
+      parts.push(`Missing: ${deps.missing.join(', ')}`);
+    }
+    return parts.join('\n') || 'No dependency info';
+  }
+
+  _formatIndexSummary(index) {
+    if (!index) return 'No index available';
+    return `Files: ${index.file_tree?.length || 0}, TODOs: ${index.todo_fixme_count || 0}, Test coverage: ${index.test_coverage_estimate || 0}%`;
+  }
+
+  _detectMissingConfigs(index) {
+    const signals = [];
+    const configFiles = (index.config_files || []).map(c => c.path || c);
+    if (!configFiles.some(f => f.includes('docker'))) signals.push('No Docker config');
+    if (!configFiles.some(f => f.includes('.env'))) signals.push('No .env template');
+    if (!configFiles.some(f => f.includes('ci') || f.includes('workflow'))) signals.push('No CI/CD config');
+    return signals;
+  }
+
+  _detectConfigPresence(index) {
+    const configs = (index.config_files || []).map(c => c.path || c);
+    return configs.length > 0 ? configs : ['No config files detected'];
+  }
+
+  _extractEnvKeys(index) {
+    // Extract from config_files if available
+    const envConfig = (index.config_files || []).find(c => (c.path || c).includes('.env'));
+    if (envConfig?.parsed_data) {
+      return Object.keys(envConfig.parsed_data);
+    }
+    return [];
+  }
 }
 
 // ============================================================================
-// PRESET PIPELINES
+// PRESET PIPELINES (Updated with new agents)
 // ============================================================================
 
 export const PRESET_PIPELINES = {
+  // New spec-aligned pipelines
+  analyze: {
+    name: 'Analyze & Plan',
+    description: 'Understand project, identify gaps, create execution plan',
+    agents: [AgentType.ARCHITECT, AgentType.GAP_ANALYZER, AgentType.TASK_PLANNER],
+    icon: '🏗️',
+    workflow: 'analysis',
+  },
+  implement: {
+    name: 'Implement & Test',
+    description: 'Generate code changes with tests',
+    agents: [AgentType.IMPLEMENTER, AgentType.TEST_QA],
+    icon: '⚙️',
+    workflow: 'implementation',
+  },
+  deploy: {
+    name: 'Prepare Deployment',
+    description: 'Generate deployment configs and instructions',
+    agents: [AgentType.DEVOPS],
+    icon: '🚀',
+    workflow: 'deployment',
+  },
+  // Legacy pipelines (backwards compatible)
   fullAudit: {
     name: 'Full Audit',
     description: 'Security audit, code review, and documentation',
@@ -501,5 +870,13 @@ export const PRESET_PIPELINES = {
 // ============================================================================
 
 export const orchestrator = new MultiAgentOrchestrator();
-export { Agent, AGENT_DEFINITIONS };
+export {
+  Agent,
+  AGENT_DEFINITIONS,
+  GLOBAL_SYSTEM_PROMPT,
+  USER_PROMPTS,
+  RESPONSE_SCHEMAS,
+  buildUserPrompt,
+  getAgentDefinition,
+};
 export default orchestrator;
