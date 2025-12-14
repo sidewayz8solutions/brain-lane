@@ -161,7 +161,7 @@ export const InvokeLLM = async ({ prompt, response_json_schema, add_context_from
         { role: 'user', content: prompt }
       ],
       response_format: (!isLargePrompt && response_json_schema) ? { type: 'json_object' } : undefined,
-      max_tokens: 1200,
+      max_tokens: 4000, // Increased to avoid truncation on complex analyses
       temperature: 0.2, // Lower temperature for more consistent structured output
     };
     
@@ -244,23 +244,47 @@ export const InvokeLLM = async ({ prompt, response_json_schema, add_context_from
         }
         // Remove trailing commas before closing braces/brackets
         t = t.replace(/,\s*([}\]])/g, '$1');
-        // Attempt to balance braces quickly (basic heuristic)
-        const openCount = (t.match(/\{/g) || []).length;
-        const closeCount = (t.match(/\}/g) || []).length;
-        if (closeCount < openCount) {
+        // Balance all braces and brackets (handles truncated JSON)
+        const openBraces = (t.match(/\{/g) || []).length;
+        const closeBraces = (t.match(/\}/g) || []).length;
+        const openBrackets = (t.match(/\[/g) || []).length;
+        const closeBrackets = (t.match(/\]/g) || []).length;
+        // Close any unclosed arrays first, then objects
+        for (let i = 0; i < openBrackets - closeBrackets; i++) {
+          t += ']';
+        }
+        for (let i = 0; i < openBraces - closeBraces; i++) {
           t += '}';
         }
-        return tryParse(t);
+        // Try to fix truncated strings (missing closing quote)
+        const result = tryParse(t);
+        if (result) return result;
+        // If still failing, try adding a closing quote before the brackets/braces we added
+        if (openBraces > closeBraces || openBrackets > closeBrackets) {
+          const closers = t.slice(-(openBraces - closeBraces + openBrackets - closeBrackets));
+          const base = t.slice(0, t.length - closers.length);
+          // Check for unterminated string
+          const quoteCount = (base.match(/(?<!\\)"/g) || []).length;
+          if (quoteCount % 2 !== 0) {
+            return tryParse(base + '"' + closers);
+          }
+        }
+        return null;
       };
 
       // If server already repaired content (json string), parsing should succeed
       const parsed = tryParse(content) || repairJson(content);
       if (parsed) {
         console.log('✅ JSON parsed successfully (with repair if needed)');
+        // Log task count for debugging
+        if (parsed.tasks) {
+          console.log('📋 Tasks in response:', parsed.tasks.length);
+        }
         return parsed;
       }
       // Final fallback: provide minimal structured object to avoid UI crash
       console.warn('⚠️ Using fallback structured response due to parse failure');
+      console.warn('📄 Raw content preview:', content?.slice(0, 500));
       return {
         summary: 'Analysis encountered formatting issues. Partial results may be unavailable.',
         detected_stack: { framework: '', language: '', package_manager: '', testing_framework: '', database: '', additional: [] },
