@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Sparkles, Zap, GitBranch, CheckCircle, Brain, Code2, Cpu, Shield, Rocket, Star, AlertCircle, Activity, TrendingUp, Clock, Target, Home as HomeIcon, FolderGit2 } from 'lucide-react';
+import { Sparkles, Zap, GitBranch, CheckCircle, Brain, Code2, Cpu, Shield, Rocket, Star, AlertCircle, Activity, TrendingUp, Clock, Target, Home as HomeIcon, FolderGit2, LogIn } from 'lucide-react';
 import FileUploader from '../components/upload/FileUploader';
 import FloatingParticles from '../components/ui/FloatingParticles';
 import Logo from '../components/ui/Logo';
@@ -12,17 +12,32 @@ import { UploadFile, ExtractZipContents, AnalyzeProjectStructure, UploadZipToSup
 import { hasSupabase, getSupabaseDiagnostics } from '@/services/supabaseClient';
 import { runProjectAnalysis } from '@/services/analysisService';
 import { OrbitalSpinner } from '@/components/ui/LoadingSpinner';
+import { useAuth } from '@/components/auth/AuthProvider';
+import AuthModal from '@/components/auth/AuthModal';
 
 export default function Home() {
     const navigate = useNavigate();
+    const { isAuthenticated, isLoading: authLoading } = useAuth();
     const [isUploading, setIsUploading] = useState(false);
     const [uploadError, setUploadError] = useState(null);
     const [analysisStatus, setAnalysisStatus] = useState('idle');
     const [analysisError, setAnalysisError] = useState(null);
     const [analysisModalVisible, setAnalysisModalVisible] = useState(false);
     const [analysisProject, setAnalysisProject] = useState(null);
+    const [authModalOpen, setAuthModalOpen] = useState(false);
     const createProject = useProjectStore((state) => state.createProject);
     const updateProject = useProjectStore((state) => state.updateProject);
+
+    // Handle "Start your 7 day sprint" button click
+    const handleStartSprint = () => {
+        if (isAuthenticated) {
+            // User is logged in - scroll to upload section or navigate to projects
+            navigate(createPageUrl('Projects'));
+        } else {
+            // User is not logged in - open signup modal
+            setAuthModalOpen(true);
+        }
+    };
 
     const handleUpload = async (data) => {
         console.log('handleUpload called with:', data);
@@ -246,6 +261,24 @@ export default function Home() {
                             <Brain className="w-4 h-4" />
                             Health
                         </Link>
+
+                        {/* Start Sprint CTA - Shows Sign Up for unauthenticated users */}
+                        <button
+                            onClick={handleStartSprint}
+                            className="ml-2 px-4 py-2 rounded-lg text-sm font-semibold bg-gradient-to-r from-[#FFE566] to-[#FFC947] text-slate-900 hover:opacity-90 transition-all flex items-center gap-2 shadow-lg shadow-[#FFE566]/20"
+                        >
+                            {isAuthenticated ? (
+                                <>
+                                    <Rocket className="w-4 h-4" />
+                                    Go to Projects
+                                </>
+                            ) : (
+                                <>
+                                    <LogIn className="w-4 h-4" />
+                                    Start 7-Day Sprint
+                                </>
+                            )}
+                        </button>
                     </div>
                 </div>
             </nav>
@@ -630,6 +663,13 @@ export default function Home() {
                     </motion.div>
                 </motion.div>
             )}
+
+            {/* Auth Modal for Sign Up */}
+            <AuthModal
+                isOpen={authModalOpen}
+                onClose={() => setAuthModalOpen(false)}
+                initialMode="signup"
+            />
         </div>
     );
 }
